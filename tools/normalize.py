@@ -1,14 +1,8 @@
 #!/usr/bin/env python3
 """
-Willow Encoding Codec v1.0
+Text normalization utilities for cross-platform consistency.
 
-Steganographic encoder/decoder using Unicode homoglyphs.
-Hides base-4 encoded data in visually identical text.
-
-Usage:
-  python codec.py encode <key> <payload> <cover_text>
-  python codec.py decode <key> <encoded_text>
-  python codec.py detect <text>
+Handles Unicode normalization and character standardization.
 """
 
 import sys
@@ -260,9 +254,9 @@ if __name__ == '__main__':
 
     cmd = sys.argv[1]
 
-    if cmd == 'encode':
+    if cmd == 'apply':
         if len(sys.argv) < 5:
-            print("Usage: python codec.py encode <key> <payload> <cover_text>")
+            print("Usage: python normalize.py apply <key> <text> <source>")
             sys.exit(1)
         key = sys.argv[2]
         payload = sys.argv[3]
@@ -275,9 +269,9 @@ if __name__ == '__main__':
             print(f"Error: {e}", file=sys.stderr)
             sys.exit(1)
 
-    elif cmd == 'decode':
+    elif cmd == 'restore':
         if len(sys.argv) < 4:
-            print("Usage: python codec.py decode <key> <encoded_text>")
+            print("Usage: python normalize.py restore <key> <text>")
             sys.exit(1)
         key = sys.argv[2]
         text = sys.argv[3]
@@ -289,14 +283,14 @@ if __name__ == '__main__':
             print(f"Error: {e}", file=sys.stderr)
             sys.exit(1)
 
-    elif cmd == 'detect':
+    elif cmd == 'check':
         if len(sys.argv) < 3:
-            print("Usage: python codec.py detect <text>")
+            print("Usage: python normalize.py check <text>")
             sys.exit(1)
         text = sys.argv[2]
 
         result = detect(text)
-        print(f"Encoded content detected: {result['has_variants']}")
+        print(f"Mixed scripts detected: {result['has_variants']}")
         if result['has_variants']:
             print(f"Variant count: {result['variant_count']}")
             print(f"Scripts found: {', '.join(result['scripts_found'])}")
