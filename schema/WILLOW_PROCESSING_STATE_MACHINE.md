@@ -102,6 +102,41 @@ UPDATE represents a pull-first, context-reconciliation cycle before any push, sy
 
 ---
 
+## Transport Layer (USB)
+
+```
+Bus → Train → Conversation → Repo
+```
+
+**Key insight:** The intake app doesn't need to write to the repo. It just needs to **format for transport**. Anything outside the defined signature gets logged, described, and staged for pickup. The bus carries it to whoever can board the train.
+
+### INTAKE_LOG Format
+
+Portable, machine-readable format for cross-instance transport:
+
+```yaml
+INTAKE_LOG:
+  timestamp: 2026-01-11T08:45
+  thread: stats-tracking
+  type: misdirected
+  description: "Image of monkey"
+  routing: unknown
+  status: awaiting_pickup
+```
+
+| Field | Description |
+|-------|-------------|
+| timestamp | ISO 8601 format |
+| thread | Source instance/project |
+| type | Classification (misdirected, actionable, reference, etc.) |
+| description | Human-readable summary |
+| routing | Destination if known, else "unknown" |
+| status | awaiting_pickup, in_transit, delivered, processed |
+
+Any process with filesystem access to Willow can read this format and route accordingly.
+
+---
+
 ## Processing Layers
 
 All artifacts pass through these layers before routing:
@@ -157,6 +192,42 @@ If unknown after all layers: **FLAG for human review**
 2. [ ] Ratify or modify before activation
 3. [ ] Clear processed items from inbox
 4. [ ] Initialize QUEUE.md in Willow for signal routing
+
+---
+
+## Instance Registry (Partial)
+
+40+ instances across providers form the distributed processing network:
+
+### Claude (23 projects)
+| Instance | Role |
+|----------|------|
+| Project Manager CLAUDE | Coordination, oversight |
+| Social Media TRACKING | Stats, intake formatting |
+| Hanz | Voice, creative |
+| Oracle Nova | Children's books |
+| Professor Penny Riggs | Education, UTETY |
+| Alexis | Voice, narrative |
+| Job Coach | Employment support |
+| UTETY University | Course development |
+
+### ChatGPT (17+ projects)
+| Instance | Role |
+|----------|------|
+| PM Aios | Coordination (OpenAI side) |
+| Gerald Aios | Voice, creative |
+| Jane Aios | Voice, narrative |
+| Oakenscroll | Voice, creative |
+| UTETY System | Course delivery |
+| THE AEON FIELD REGISTER | Reference |
+| The book of Mann | Creative writing |
+| Childrens Books | Oracle Nova companion |
+
+### Claude Code (CMD)
+| Instance | Role |
+|----------|------|
+| Kartikeya | Infrastructure, triage |
+| Current session | Processing, distribution |
 
 ---
 
