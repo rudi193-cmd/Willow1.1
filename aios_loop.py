@@ -37,19 +37,81 @@ from googleapiclient.http import MediaIoBaseDownload
 import io
 
 # --- MODULAR IMPORTS ---
-import state
-import gate
-import storage
-import llm_router
+from core import state, gate, storage
+from core import llm_router
+from core import knowledge
 
 # --- CONFIG ---
 EARTH_PATH = os.getcwd()
 ARTIFACTS_PATH = os.path.join(EARTH_PATH, "artifacts")
-PENDING_PATH = os.path.join(ARTIFACTS_PATH, "pending")
+PENDING_PATH = os.path.join(ARTIFACTS_PATH, "pending")  # Legacy — per-user pending below
 CREDENTIALS_FILE = os.path.join(EARTH_PATH, "credentials.json")
 TOKEN_FILE = os.path.join(EARTH_PATH, "token.pickle")
 LOG_PATH = os.path.join(EARTH_PATH, "system.log")
-MASTER_DB_PATH = os.path.join(EARTH_PATH, "willow_index.db")
+MASTER_DB_PATH = os.path.join(EARTH_PATH, "willow_index.db")  # Legacy — per-user DB below
+
+# --- GOOGLE DRIVE MOUNT DETECTION ---
+_GDRIVE_CANDIDATES = [
+    r"G:\My Drive",
+    os.path.join(os.path.expanduser("~"), "My Drive"),
+    os.path.join(os.path.expanduser("~"), "Google Drive"),
+]
+GDRIVE_ROOT = next((p for p in _GDRIVE_CANDIDATES if os.path.isdir(p)), None)
+if GDRIVE_ROOT:
+    GDRIVE_WILLOW = os.path.join(GDRIVE_ROOT, "Willow", "Auth Users")
+    logging.info(f"DRIVE MOUNT: {GDRIVE_ROOT}")
+else:
+    GDRIVE_WILLOW = None
+    logging.warning("DRIVE MOUNT: No local Google Drive found — API-only harvest")
+
+# --- PER-USER CONFIG ---
+ADMIN_USER = 'Sweet-Pea-Rudi19'
+ADMIN_ERRORS_DB = os.path.join(EARTH_PATH, 'admin_errors.db')
+
+# Instance registry integration — replaces flat USER_REGISTRY list
+sys.path.insert(0, os.path.join(os.path.dirname(EARTH_PATH), "die-namic-system", "bridge_ring"))
+try:
+    import instance_registry
+    instance_registry.init_db()
+    _REGISTRY_AVAILABLE = True
+except ImportError:
+    _REGISTRY_AVAILABLE = False
+    logging.warning("BOOT: instance_registry not found, falling back to default user list")
+
+
+def get_active_users():
+    """
+    Get list of active usernames from instance_registry.
+    Falls back to [ADMIN_USER] if registry unavailable.
+
+    Users are registered as instance_type='user' in the registry.
+    """
+    if not _REGISTRY_AVAILABLE:
+        return [ADMIN_USER]
+
+    try:
+        users = instance_registry.list_instances(instance_type='user')
+        if users:
+            return [u.instance_id for u in users]
+    except Exception as e:
+        logging.warning(f"REGISTRY: Failed to list users: {e}")
+
+    return [ADMIN_USER]
+
+
+def user_artifacts_path(username):
+    """Per-user artifacts root: artifacts/{username}/"""
+    return os.path.join(ARTIFACTS_PATH, username)
+
+
+def user_pending_path(username):
+    """Per-user pending inbox: artifacts/{username}/pending/"""
+    return os.path.join(ARTIFACTS_PATH, username, 'pending')
+
+
+def user_db_path(username):
+    """Per-user master index: artifacts/{username}/willow_index.db"""
+    return os.path.join(ARTIFACTS_PATH, username, 'willow_index.db')
 
 # LIBRARIAN CONFIG (die-namic-system core module)
 DIE_NAMIC_PATH = os.path.join(os.path.dirname(EARTH_PATH), "die-namic-system")
@@ -92,25 +154,25 @@ except Exception as e:
 # =============================================================================
 # 1. ORGANIC CONTEXT (The Map)
 # =============================================================================
-def get_organic_structure():
+def get_organic_structure(username):
     """
-    Scans the artifacts/ folder to build a map of existing categories.
-    The AI uses this to maintain consistency with YOUR filing system.
+    Scans artifacts/{username}/ to build a map of existing categories.
+    Each user gets their own organic folder structure — LLMs build it
+    based on what the user drops in.
     """
+    user_path = user_artifacts_path(username)
+    os.makedirs(user_path, exist_ok=True)
+
     structure = []
-    if not os.path.exists(ARTIFACTS_PATH):
-        return "No existing structure (Fresh Start)."
-        
-    for item in os.listdir(ARTIFACTS_PATH):
-        item_path = os.path.join(ARTIFACTS_PATH, item)
+    for item in os.listdir(user_path):
+        item_path = os.path.join(user_path, item)
         if os.path.isdir(item_path) and item != "pending":
-            # Just get top-level for now to save tokens, or recurse if needed
             structure.append(f"/{item}")
-            
+
     if not structure:
         return "No existing structure."
-        
-    return "\n".join(structure)
+
+    return "\n".join(sorted(structure))
 
 # =============================================================================
 # 2. GOOGLE DRIVE API (The Harvester)
@@ -139,95 +201,295 @@ def get_drive_service():
 
     return build('drive', 'v3', credentials=creds)
 
-def harvest_drive(service):
+def harvest_drive(service, username):
     """
-    Checks the 'Drop' folder on Drive and pulls files to local pending.
+    Checks the user's Drop folder on Drive and pulls files to local pending.
+    Path: Willow / Auth Users / {username} / Drop
+    Move semantics: download + delete from Drive.
     """
-    if not service: return
+    if not service:
+        return
 
-    # 1. Find the 'Drop' folder ID (Assumes folder name is 'Drop')
-    results = service.files().list(
-        q="name = 'Drop' and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
-        fields="files(id, name)").execute()
-    items = results.get('files', [])
-    
-    if not items:
-        return # No Drop folder found
-        
-    drop_folder_id = items[0]['id']
+    pending_path = user_pending_path(username)
+    os.makedirs(pending_path, exist_ok=True)
 
-    # 2. List files inside 'Drop'
+    # Navigate: Willow -> Auth Users -> {username} -> Drop
+    try:
+        # Find Willow folder
+        results = service.files().list(
+            q="name = 'Willow' and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
+            fields="files(id)").execute()
+        willow_files = results.get('files', [])
+        if not willow_files:
+            return
+        willow_id = willow_files[0]['id']
+
+        # Find Auth Users inside Willow
+        results = service.files().list(
+            q=f"name = 'Auth Users' and '{willow_id}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
+            fields="files(id)").execute()
+        au_files = results.get('files', [])
+        if not au_files:
+            return
+        au_id = au_files[0]['id']
+
+        # Find user folder inside Auth Users
+        results = service.files().list(
+            q=f"name = '{username}' and '{au_id}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
+            fields="files(id)").execute()
+        user_files = results.get('files', [])
+        if not user_files:
+            return
+        user_id = user_files[0]['id']
+
+        # Find Drop inside user folder
+        results = service.files().list(
+            q=f"name = 'Drop' and '{user_id}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
+            fields="files(id)").execute()
+        drop_files = results.get('files', [])
+        if not drop_files:
+            return
+        drop_id = drop_files[0]['id']
+
+    except Exception as e:
+        logging.error(f"DRIVE HARVEST: Navigation failed for {username}: {e}")
+        log_admin_error(username, "DRIVE_NAV", str(e))
+        return
+
+    # List files inside Drop
     results = service.files().list(
-        q=f"'{drop_folder_id}' in parents and trashed = false",
+        q=f"'{drop_id}' in parents and trashed = false",
         fields="files(id, name, mimeType)").execute()
     files = results.get('files', [])
 
     for file in files:
         file_id = file['id']
         file_name = file['name']
-        
-        # Skip Google Docs (need export logic, keeping it simple for binary files first)
+
+        # Skip Google Docs (need export logic)
         if "google-apps" in file['mimeType']:
             continue
-            
-        logging.info(f"DRIVE HARVEST: Downloading {file_name}...")
-        
-        request = service.files().get_media(fileId=file_id)
-        fh = io.FileIO(os.path.join(PENDING_PATH, file_name), 'wb')
-        downloader = MediaIoBaseDownload(fh, request)
-        done = False
-        while done is False:
-            status, done = downloader.next_chunk()
-            
-        # 3. Delete from Drive (Move complete)
-        service.files().delete(fileId=file_id).execute()
-        logging.info(f"DRIVE HARVEST: {file_name} moved to Local Pending.")
+
+        logging.info(f"DRIVE HARVEST [{username}]: Downloading {file_name}...")
+
+        try:
+            request = service.files().get_media(fileId=file_id)
+            fh = io.FileIO(os.path.join(pending_path, file_name), 'wb')
+            downloader = MediaIoBaseDownload(fh, request)
+            done = False
+            while done is False:
+                dl_status, done = downloader.next_chunk()
+
+            # Delete from Drive (move complete)
+            service.files().delete(fileId=file_id).execute()
+            logging.info(f"DRIVE HARVEST [{username}]: {file_name} moved to pending.")
+        except Exception as e:
+            logging.error(f"DRIVE HARVEST [{username}]: Failed {file_name}: {e}")
+            log_admin_error(username, "DRIVE_DOWNLOAD", f"{file_name}: {e}")
+
+def transmute_gdoc(filepath, drive_service, pending_path):
+    """
+    Convert a Google Docs shortcut (.gdoc/.gsheet/.gslides) to PDF via Drive API.
+    The .gdoc file is a local shortcut containing a JSON payload with the Drive file ID.
+    We read the ID directly — no name-matching needed.
+    Returns True if PDF was created and shortcut removed.
+    """
+    if not drive_service:
+        return False
+
+    filename = os.path.basename(filepath)
+    name_no_ext = os.path.splitext(filename)[0]
+
+    try:
+        # Read the shortcut file to extract the Drive file ID directly
+        file_id = None
+        try:
+            with open(filepath, 'r', encoding='utf-8') as fh:
+                data = json.load(fh)
+                # .gdoc files store ID as "doc_id" or extractable from "url"
+                file_id = data.get('doc_id') or data.get('resource_id')
+                if not file_id and 'url' in data:
+                    # Extract ID from URL: https://docs.google.com/.../d/FILE_ID/...
+                    url = data['url']
+                    parts = url.split('/d/')
+                    if len(parts) > 1:
+                        file_id = parts[1].split('/')[0]
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            pass
+
+        # Fallback: search by name if shortcut file couldn't be parsed
+        if not file_id:
+            safe_query_name = name_no_ext.replace("\\", "\\\\").replace("'", "\\'")
+            query = f"name = '{safe_query_name}' and trashed = false"
+            results = drive_service.files().list(q=query, pageSize=1, fields="files(id, name)").execute()
+            items = results.get('files', [])
+
+            if not items:
+                logging.warning(f"TRANSMUTE: {filename} — no ID in shortcut and cloud name not found")
+                return False
+
+            file_id = items[0]['id']
+
+        # Export as PDF
+        request = drive_service.files().export_media(fileId=file_id, mimeType='application/pdf')
+        safe_name = re.sub(r'[<>:"/\\|?*]', '', name_no_ext) + ".pdf"
+        dest = os.path.join(pending_path, safe_name)
+
+        with open(dest, 'wb') as fh:
+            fh.write(request.execute())
+
+        # Remove the shortcut file (the PDF is the real artifact now)
+        try:
+            os.remove(filepath)
+        except PermissionError:
+            pass  # Drive sync lock — will get cleaned up
+
+        logging.info(f"TRANSMUTE: {filename} -> {safe_name}")
+        return True
+
+    except Exception as e:
+        logging.error(f"TRANSMUTE: {filename} failed: {e}")
+        return False
+
+
+def harvest_local(username, drive_service=None):
+    """
+    Harvest files from locally-mounted Google Drive Drop folder.
+    Faster than API — no auth needed, just filesystem move.
+    Path: {GDRIVE_ROOT}/Willow/Auth Users/{username}/Drop/
+    Move semantics: shutil.move (source deleted).
+    Google Docs shortcuts (.gdoc etc) are exported to PDF via Drive API.
+    """
+    if not GDRIVE_WILLOW:
+        return
+
+    drop_path = os.path.join(GDRIVE_WILLOW, username, "Drop")
+    if not os.path.isdir(drop_path):
+        return
+
+    pending_path = user_pending_path(username)
+    os.makedirs(pending_path, exist_ok=True)
+
+    # Google Docs shortcut extensions — need transmutation, not move
+    GDOC_EXT = {'.gdoc', '.gsheet', '.gslides'}
+
+    # Walk recursively — Drop may contain subfolders (narrative/, specs/, etc.)
+    harvested = 0
+    for root, dirs, files in os.walk(drop_path):
+        for item in files:
+            if item == '.gitkeep':
+                continue
+
+            src = os.path.join(root, item)
+            ext = os.path.splitext(item)[1].lower()
+
+            # Google Docs shortcuts: export to PDF via API
+            if ext in GDOC_EXT:
+                transmute_gdoc(src, drive_service, pending_path)
+                harvested += 1
+                continue
+
+            # Sanitize filename: replace problem chars, collapse spaces
+            safe_name = item.replace('\t', '_').strip()
+            safe_name = re.sub(r'[<>:"/\\|?*]', '_', safe_name)  # Windows-illegal chars
+            safe_name = re.sub(r'\s+', ' ', safe_name)  # Collapse whitespace (keep single spaces)
+
+            try:
+                dest = os.path.join(pending_path, safe_name)
+                # Handle name collisions from different subfolders
+                if os.path.exists(dest):
+                    stem, suffix = os.path.splitext(safe_name)
+                    dest = os.path.join(pending_path, f"{stem}_{datetime.now().strftime('%H%M%S')}{suffix}")
+
+                # Skip if file is still being written by Drive sync
+                try:
+                    file_size = os.path.getsize(src)
+                    if file_size == 0:
+                        continue  # Still syncing
+                except OSError:
+                    continue
+
+                shutil.move(src, dest)
+                harvested += 1
+                logging.info(f"LOCAL HARVEST [{username}]: {item} -> pending/")
+            except PermissionError:
+                # Drive sync still writing — skip, get it next cycle
+                logging.debug(f"LOCAL HARVEST [{username}]: {item} locked (sync in progress), skipping")
+            except Exception as e:
+                logging.error(f"LOCAL HARVEST [{username}]: Failed {item}: {e}")
+                log_admin_error(username, "LOCAL_HARVEST", f"{item}: {e}")
+
+    if harvested:
+        logging.info(f"LOCAL HARVEST [{username}]: {harvested} files moved to pending")
+
 
 # =============================================================================
 # 3. THE REFINERY (Vision + Router + Organic Map)
 # =============================================================================
 def visual_cortex(filepath):
-    """Sends image to Gemini Vision API (free tier) for analysis."""
+    """
+    Analyze image for file sorting context.
+    Cascade: Gemini Vision (free) -> llm_router text fallback -> filename patterns.
+    """
     # Ensure keys are loaded
     if not GEMINI_API_KEY:
         llm_router.load_keys_from_json()
 
     api_key = os.environ.get("GEMINI_API_KEY", GEMINI_API_KEY)
-    if not api_key:
-        logging.warning("VISION: No Gemini API key — falling back to filename analysis")
-        return _filename_context(filepath)
+    gemini_failed = False
 
-    try:
-        with open(filepath, "rb") as img_file:
-            b64_image = base64.b64encode(img_file.read()).decode('utf-8')
+    if api_key:
+        try:
+            with open(filepath, "rb") as img_file:
+                b64_image = base64.b64encode(img_file.read()).decode('utf-8')
 
-        # Detect MIME type
-        ext = os.path.splitext(filepath)[1].lower()
-        mime = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png"}.get(ext.lstrip('.'), "image/jpeg")
+            ext = os.path.splitext(filepath)[1].lower()
+            mime = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png"}.get(ext.lstrip('.'), "image/jpeg")
 
-        payload = {
-            "contents": [{
-                "parts": [
-                    {"text": "Analyze this image. Describe it in 1 sentence for file sorting. What app or context is it from?"},
-                    {"inline_data": {"mime_type": mime, "data": b64_image}}
-                ]
-            }]
-        }
+            payload = {
+                "contents": [{
+                    "parts": [
+                        {"text": "Analyze this image. Describe it in 1 sentence for file sorting. What app or context is it from?"},
+                        {"inline_data": {"mime_type": mime, "data": b64_image}}
+                    ]
+                }]
+            }
 
-        url = f"{GEMINI_VISION_URL}?key={api_key}"
-        response = requests.post(url, json=payload, timeout=30)
+            url = f"{GEMINI_VISION_URL}?key={api_key}"
+            response = requests.post(url, json=payload, timeout=30)
 
-        if response.status_code == 200:
-            result = response.json()
-            text = result.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-            if text:
-                return text
-        else:
-            logging.warning(f"VISION: Gemini returned {response.status_code}: {response.text[:200]}")
-    except Exception as e:
-        logging.warning(f"VISION: Gemini error: {e}")
+            if response.status_code == 200:
+                result = response.json()
+                text = result.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                if text:
+                    return text
+            elif response.status_code == 429:
+                logging.warning("VISION: Gemini quota exceeded — cascading to fleet")
+                gemini_failed = True
+            else:
+                logging.warning(f"VISION: Gemini returned {response.status_code}: {response.text[:200]}")
+                gemini_failed = True
+        except Exception as e:
+            logging.warning(f"VISION: Gemini error: {e}")
+            gemini_failed = True
+    else:
+        gemini_failed = True
 
-    # Fallback: extract context from filename
+    # Fallback 1: Use llm_router with filename context (cascades through free fleet)
+    if gemini_failed:
+        filename_hint = _filename_context(filepath)
+        filename = os.path.basename(filepath)
+        if filename_hint:
+            prompt = f"File: {filename}\nContext: {filename_hint}\nDescribe this file in 1 sentence for sorting. What category does it belong to?"
+            try:
+                resp = llm_router.ask(prompt, preferred_tier="free")
+                if resp and resp.content:
+                    logging.info(f"VISION FALLBACK: {filename} analyzed via {resp.provider}")
+                    return resp.content
+            except Exception as e:
+                logging.warning(f"VISION FALLBACK: llm_router failed: {e}")
+
+    # Fallback 2: filename patterns only
     return _filename_context(filepath)
 
 
@@ -265,18 +527,31 @@ def _file_hash(filepath):
     return h.hexdigest()
 
 
+def _safe_connect(db_path):
+    """SQLite connection with WAL mode and busy timeout for concurrent access."""
+    conn = sqlite3.connect(db_path, timeout=10)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=5000")
+    return conn
+
+
 def _catalog_db(folder_path):
     """Returns a connection to the folder's catalog.db, creating table if needed."""
     db_path = os.path.join(folder_path, "catalog.db")
-    conn = sqlite3.connect(db_path)
+    conn = _safe_connect(db_path)
     conn.execute("""CREATE TABLE IF NOT EXISTS file_registry (
         file_hash TEXT PRIMARY KEY,
         filename TEXT,
         ingest_date TEXT,
         category TEXT,
-        status TEXT,
+        status TEXT DEFAULT 'active',
         source TEXT,
-        provider TEXT
+        provider TEXT,
+        archive_date TEXT,
+        archive_path TEXT,
+        deleted_date TEXT,
+        flagged_reason TEXT,
+        retain_context INTEGER DEFAULT 1
     )""")
     conn.commit()
     return conn
@@ -291,7 +566,7 @@ def catalog_file(folder_path, filename, category, source, provider):
         conn.execute(
             """INSERT OR REPLACE INTO file_registry
                (file_hash, filename, ingest_date, category, status, source, provider)
-               VALUES (?, ?, ?, ?, 'SORTED', ?, ?)""",
+               VALUES (?, ?, ?, ?, 'active', ?, ?)""",
             (fhash, filename, datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
              category, source, provider)
         )
@@ -310,20 +585,74 @@ def notify(title, message):
         pass  # Silent fail — notifications are best-effort
 
 
-def sync_to_master(filename, fhash, category, source, provider):
-    """Upsert file record into master willow_index.db."""
+def log_admin_error(username, error_type, detail):
+    """Log an error to admin_errors.db for cross-user error routing."""
     try:
-        conn = sqlite3.connect(MASTER_DB_PATH)
-        conn.execute("""CREATE TABLE IF NOT EXISTS file_registry
-            (file_hash TEXT PRIMARY KEY, filename TEXT, ingest_date TEXT, category TEXT, status TEXT)""")
+        conn = _safe_connect(ADMIN_ERRORS_DB)
+        conn.execute("""CREATE TABLE IF NOT EXISTS admin_errors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            username TEXT,
+            error_type TEXT,
+            detail TEXT,
+            status TEXT DEFAULT 'open',
+            resolution TEXT
+        )""")
         conn.execute(
-            "INSERT OR REPLACE INTO file_registry (file_hash, filename, ingest_date, category, status) VALUES (?, ?, ?, ?, 'SORTED')",
-            (fhash, filename, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), category)
+            "INSERT INTO admin_errors (timestamp, username, error_type, detail) VALUES (?, ?, ?, ?)",
+            (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), username, error_type, detail)
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logging.critical(f"ADMIN_ERROR_LOG FAILED: {e}")
+
+
+def _get_or_create_drive_folder(service, name, parent_id):
+    """Find or create a folder on Google Drive under parent_id."""
+    query = f"name = '{name}' and '{parent_id}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false"
+    results = service.files().list(q=query, fields="files(id, name)").execute()
+    files = results.get('files', [])
+    if files:
+        return files[0]['id']
+    # Create it
+    meta = {'name': name, 'mimeType': 'application/vnd.google-apps.folder', 'parents': [parent_id]}
+    folder = service.files().create(body=meta, fields='id').execute()
+    return folder['id']
+
+
+def sync_to_master(filename, fhash, category, source, provider, username):
+    """Upsert file record into per-user willow_index.db."""
+    db_path = user_db_path(username)
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    try:
+        conn = _safe_connect(db_path)
+        conn.execute("""CREATE TABLE IF NOT EXISTS file_registry (
+            file_hash TEXT PRIMARY KEY,
+            filename TEXT,
+            ingest_date TEXT,
+            category TEXT,
+            status TEXT DEFAULT 'active',
+            source TEXT,
+            provider TEXT,
+            archive_date TEXT,
+            archive_path TEXT,
+            deleted_date TEXT,
+            flagged_reason TEXT,
+            retain_context INTEGER DEFAULT 1
+        )""")
+        conn.execute(
+            """INSERT OR REPLACE INTO file_registry
+               (file_hash, filename, ingest_date, category, status, source, provider)
+               VALUES (?, ?, ?, ?, 'active', ?, ?)""",
+            (fhash, filename, datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+             category, source, provider)
         )
         conn.commit()
         conn.close()
     except Exception as e:
         logging.warning(f"MASTER DB: {filename} -> {e}")
+        log_admin_error(username, "DB_SYNC_ERROR", f"Failed to sync {filename}: {e}")
 
 
 def update_folder_readme(folder_path):
@@ -333,7 +662,7 @@ def update_folder_readme(folder_path):
         db_path = os.path.join(folder_path, "catalog.db")
         if not os.path.exists(db_path):
             return
-        conn = sqlite3.connect(db_path)
+        conn = _safe_connect(db_path)
         rows = conn.execute("SELECT filename, ingest_date, source, provider FROM file_registry ORDER BY ingest_date DESC").fetchall()
         conn.close()
         lines = [
@@ -550,37 +879,127 @@ def extract_text(filepath):
     except:
         return ""
 
-def refinery_cycle(drive_service):
+def archive_to_drive(service, filepath, username, category):
     """
-    The Loop:
-    1. Harvest Cloud -> Local Pending
-    2. Read Organic Map (Existing Folders)
-    3. Sort Pending Files using Map
+    Upload processed file to Drive Archive, then delete local copy.
+    Path: Willow / Auth Users / {username} / Archive / {category} / {filename}
+    Mirrors local structure. Move semantics: upload + local delete.
+
+    Returns True on success, False on failure (file left local).
     """
-    
-    # A. HARVEST
+    if not service:
+        return False
+
+    filename = os.path.basename(filepath)
+
     try:
-        harvest_drive(drive_service)
+        # Navigate to user folder (reuse _get_or_create for Archive + category)
+        results = service.files().list(
+            q="name = 'Willow' and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
+            fields="files(id)").execute()
+        willow_files = results.get('files', [])
+        if not willow_files:
+            logging.error(f"ARCHIVE: No Willow folder on Drive")
+            return False
+        willow_id = willow_files[0]['id']
+
+        au_id = _get_or_create_drive_folder(service, 'Auth Users', willow_id)
+        user_id = _get_or_create_drive_folder(service, username, au_id)
+        archive_id = _get_or_create_drive_folder(service, 'Archive', user_id)
+        category_id = _get_or_create_drive_folder(service, category, archive_id)
+
+        # Upload
+        from googleapiclient.http import MediaFileUpload
+        media = MediaFileUpload(filepath)
+        service.files().create(
+            body={'name': filename, 'parents': [category_id]},
+            media_body=media
+        ).execute()
+
+        drive_path = f"Willow/Auth Users/{username}/Archive/{category}/{filename}"
+
+        # Update per-user DB: mark as archived
+        db_path = user_db_path(username)
+        try:
+            conn = _safe_connect(db_path)
+            conn.execute(
+                """UPDATE file_registry SET status='archived', archive_date=?, archive_path=?
+                   WHERE filename=?""",
+                (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), drive_path, filename)
+            )
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            logging.warning(f"ARCHIVE DB: {filename} -> {e}")
+
+        # Delete local (move complete) — retry if Drive sync has a lock
+        deleted = False
+        for attempt in range(3):
+            try:
+                os.remove(filepath)
+                deleted = True
+                break
+            except PermissionError:
+                time.sleep(2)  # Wait for Drive sync to release handle
+
+        if deleted:
+            logging.info(f"ARCHIVE [{username}]: {filename} -> Drive {category}/")
+        else:
+            logging.warning(f"ARCHIVE [{username}]: {filename} uploaded but local delete blocked (Drive sync lock). Will retry next cycle.")
+        return True  # Upload succeeded either way — DB is updated
+
     except Exception as e:
-        logging.error(f"DRIVE ERROR: {e}")
+        logging.error(f"ARCHIVE [{username}]: Failed {filename}: {e}")
+        log_admin_error(username, "ARCHIVE_FAIL", f"{filename}: {e}")
+        return False
+
+
+def refinery_cycle(drive_service, username):
+    """
+    Per-user processing loop:
+    1. Harvest Cloud -> User's Local Pending
+    2. Read User's Organic Map (their folder structure)
+    3. Sort Pending Files using Map
+    4. Archive processed files to Drive
+    """
+
+    # A. HARVEST (local mount first — fast, no auth; API second — for remote access)
+    try:
+        harvest_local(username, drive_service)
+    except Exception as e:
+        logging.error(f"LOCAL HARVEST ERROR [{username}]: {e}")
+
+    try:
+        harvest_drive(drive_service, username)
+    except Exception as e:
+        logging.error(f"DRIVE API ERROR [{username}]: {e}")
+        log_admin_error(username, "HARVEST_ERROR", str(e))
 
     # B. PROCESS PENDING
-    if not os.path.exists(PENDING_PATH): os.makedirs(PENDING_PATH, exist_ok=True)
-    
-    files = [f for f in os.listdir(PENDING_PATH) if f.lower().endswith(('.pdf', '.txt', '.md', '.jpg', '.jpeg', '.png'))]
-    
-    if not files: return # Sleep if nothing to do
+    pending_path = user_pending_path(username)
+    os.makedirs(pending_path, exist_ok=True)
 
-    # Get the Map ONCE per cycle
-    organic_map = get_organic_structure()
+    files = [f for f in os.listdir(pending_path) if f.lower().endswith(('.pdf', '.txt', '.md', '.jpg', '.jpeg', '.png'))]
+
+    if not files:
+        return
+
+    # Cap per cycle to avoid rate-limit storms (process rest next cycle)
+    BATCH_SIZE = 10
+    if len(files) > BATCH_SIZE:
+        logging.info(f"REFINERY [{username}]: {len(files)} pending, processing {BATCH_SIZE} this cycle")
+        files = files[:BATCH_SIZE]
+
+    # Get the Map ONCE per cycle (per-user organic structure)
+    organic_map = get_organic_structure(username)
 
     for filename in files:
-        filepath = os.path.join(PENDING_PATH, filename)
-        
+        filepath = os.path.join(pending_path, filename)
+
         # --- ANALYSIS ---
         context_content = ""
         auth_source = "Unknown"
-        
+
         if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
             desc = visual_cortex(filepath)
             if desc:
@@ -594,7 +1013,8 @@ def refinery_cycle(drive_service):
                 context_content = f"TEXT: {text[:500]}..."
                 auth_source = "Text_Parser"
 
-        if not context_content: continue
+        if not context_content:
+            continue
 
         # --- ROUTING WITH ORGANIC CONTEXT ---
         prompt = f"""You are the Janitor. File this document into the correct folder.
@@ -614,82 +1034,126 @@ FOLDER:"""
 
         # Prefer Gemini for classification (better instruction-following than local Ollama)
         response = llm_router.ask(prompt, preferred_tier="free")
-        
+
         if response and response.content:
-            # Take first non-empty line (LLMs sometimes add explanations after)
             lines = [l.strip().strip('/') for l in response.content.strip().split('\n') if l.strip()]
             destination_folder = lines[0] if lines else "Unsorted"
-            # Sanitize: alphanumeric, underscore, hyphen only
             destination_folder = ''.join(e for e in destination_folder if e.isalnum() or e in ['_', '-'])
-            # Guard: reject nonsense (too long, empty, or single char)
             if not destination_folder or len(destination_folder) > 30 or len(destination_folder) < 2:
                 destination_folder = "Unsorted"
             destination_folder = destination_folder.lower()
-            logging.info(f"ROUTED: {filename} -> {destination_folder} (via {response.provider})")
+
+            # Normalize synonym folders to canonical names
+            FOLDER_ALIASES = {
+                "pdfs": "documents",
+                "pdf": "documents",
+                "docs": "documents",
+                "doc": "documents",
+                "files": "documents",
+                "file": "documents",
+                "spec": "specs",
+                "specification": "specs",
+                "technical": "specs",
+                "photo": "photos",
+                "images": "photos",
+                "image": "photos",
+                "screenshot": "screenshots",
+                "screencap": "screenshots",
+                "snap": "screenshots",
+            }
+            destination_folder = FOLDER_ALIASES.get(destination_folder, destination_folder)
+
+            logging.info(f"ROUTED [{username}]: {filename} -> {destination_folder} (via {response.provider})")
         else:
             destination_folder = "Unsorted"
-        
+
         # --- GOVERNANCE & EXECUTION ---
         with storage.txn_lock():
             runtime_state = storage.load_state()
             req = state.ModificationRequest(
                 mod_type=state.ModificationType.STATE.value,
-                target=f"artifacts/{destination_folder}/{filename}",
+                target=f"artifacts/{username}/{destination_folder}/{filename}",
                 new_value=destination_folder,
                 reason=f"Organic sort into {destination_folder} via {auth_source}",
                 authority=state.Authority.SYSTEM.value,
                 sequence=runtime_state.sequence + 1,
                 idempotency_key=str(uuid.uuid4())
             )
-            
+
             decision, events = sovereign_gate.validate(req, runtime_state)
-            
+
             if decision.approved:
                 storage.apply_events(events, runtime_state)
-                target_dir = os.path.join(ARTIFACTS_PATH, destination_folder)
+                target_dir = os.path.join(user_artifacts_path(username), destination_folder)
                 os.makedirs(target_dir, exist_ok=True)
+                dest_filepath = os.path.join(target_dir, filename)
                 try:
-                    shutil.move(filepath, os.path.join(target_dir, filename))
+                    shutil.move(filepath, dest_filepath)
                     prov = response.provider if response else "unknown"
-                    fhash = _file_hash(os.path.join(target_dir, filename))
+                    fhash = _file_hash(dest_filepath)
                     catalog_file(target_dir, filename, destination_folder, auth_source, prov)
-                    sync_to_master(filename, fhash, destination_folder, auth_source, prov)
-                    deep_extract(os.path.join(target_dir, filename), target_dir)
+                    sync_to_master(filename, fhash, destination_folder, auth_source, prov, username)
+                    knowledge.ingest_file_knowledge(username, filename, fhash, destination_folder, context_content, prov)
+                    deep_extract(dest_filepath, target_dir)
                     update_folder_readme(target_dir)
-                    notify("Willow Filed", f"{filename} -> {destination_folder}")
-                    logging.info(f"FILED: {filename} -> {destination_folder}")
+                    # Archive to Drive (move: upload + delete local)
+                    archive_to_drive(drive_service, dest_filepath, username, destination_folder)
+                    notify("Willow Filed", f"[{username}] {filename} -> {destination_folder}")
+                    logging.info(f"FILED [{username}]: {filename} -> {destination_folder}")
                 except Exception as e:
-                    logging.error(f"MOVE FAILED: {e}")
+                    logging.error(f"MOVE FAILED [{username}]: {e}")
+                    log_admin_error(username, "FILE_MOVE", f"{filename}: {e}")
             elif decision.requires_human:
-                logging.warning(f"HALT: {filename} needs approval.")
+                logging.warning(f"HALT [{username}]: {filename} needs approval.")
 
 def main():
-    print("--- AIOS OMNI-LOOP v2.0 ---")
+    active_users = get_active_users()
+    print("--- AIOS OMNI-LOOP v3.1 (REGISTRY-BACKED) ---")
+    print(f"[*] Users: {', '.join(active_users)}")
+    print(f"[*] Registry: {'instance_registry.py' if _REGISTRY_AVAILABLE else 'fallback (flat list)'}")
     print("[*] Connecting to Google Drive API...")
     try:
         drive_service = get_drive_service()
-        if drive_service: print("[OK] Drive Link Established.")
+        if drive_service:
+            print("[OK] Drive Link Established.")
     except Exception as e:
         print(f"[!] Drive Auth Failed: {e}")
         drive_service = None
-        
+
     print(f"[*] Vision: Gemini 2.5 Flash (Cloud API)")
     llm_router.print_status()
-    
+
     cycle_count = 0
+    last_push_time = time.time()
+    GIT_PUSH_INTERVAL = 3600  # Push at most once per hour
     while True:
         try:
-            refinery_cycle(drive_service)
+            # Process each registered user (refreshed each cycle)
+            for username in get_active_users():
+                try:
+                    refinery_cycle(drive_service, username)
+                except Exception as e:
+                    logging.error(f"LOOP ERROR [{username}]: {e}")
+                    log_admin_error(username, "LOOP_ERROR", str(e))
+
             cycle_count += 1
             # Librarian pass every 5th cycle
             if cycle_count % 5 == 0:
                 librarian_pass()
+                # Knowledge backfill: fill NULL summaries + embeddings via free fleet
+                for username in get_active_users():
+                    try:
+                        knowledge.backfill_summaries(username)
+                        knowledge.backfill_embeddings(username)
+                    except Exception as e:
+                        logging.debug(f"KNOWLEDGE BACKFILL [{username}]: {e}")
             # Indexer pass every 10th cycle
             if cycle_count % 10 == 0:
                 indexer_pass()
-            # Git auto-push every 3rd cycle
-            if cycle_count % 3 == 0:
+            # Git auto-push once per hour (not every cycle)
+            if time.time() - last_push_time >= GIT_PUSH_INTERVAL:
                 git_auto_push()
+                last_push_time = time.time()
         except KeyboardInterrupt:
             break
         except Exception as e:

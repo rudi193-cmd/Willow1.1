@@ -38,7 +38,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 
-from state import (
+from .state import (
     RuntimeState,
     ModificationRequest,
     GateDecision,

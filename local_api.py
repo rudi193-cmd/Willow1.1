@@ -22,7 +22,10 @@ from pathlib import Path
 from typing import Optional
 
 # === COHERENCE TRACKING ===
-from coherence import track_conversation, get_coherence_report, check_intervention
+from core.coherence import track_conversation, get_coherence_report, check_intervention
+
+# === KNOWLEDGE ACCUMULATION ===
+from core import knowledge as _knowledge
 
 # === CONFIGURATION ===
 OLLAMA_URL = "http://localhost:11434"
@@ -30,7 +33,14 @@ LOG_FILE = Path.home() / ".willow" / "local_api.log"
 RATE_LIMIT_SECONDS = 1.0
 
 # User profile location
-USER_PROFILE_ROOT = Path(r"G:\My Drive\Willow\Auth Users")
+# Google Drive mount — detect actual location
+_GDRIVE_CANDIDATES = [
+    Path(r"G:\My Drive"),
+    Path.home() / "My Drive",           # C:\Users\Sean\My Drive
+    Path.home() / "Google Drive",
+]
+GDRIVE_ROOT = next((p for p in _GDRIVE_CANDIDATES if p.exists()), None)
+USER_PROFILE_ROOT = (GDRIVE_ROOT / "Willow" / "Auth Users") if GDRIVE_ROOT else Path(r"G:\My Drive\Willow\Auth Users")
 DEFAULT_USER = "Sweet-Pea-Rudi19"
 
 # Pickup box for cross-instance handoffs
@@ -38,15 +48,21 @@ USER_PICKUP_BOX = USER_PROFILE_ROOT / DEFAULT_USER / "Pickup"
 
 # === MODEL TIERS ===
 # Cascade: Start simple, escalate if needed
-# Tier 4 = Claude API (expensive, use sparingly)
+# Tier 4 = Gemini 2.5 Flash (free cloud — reasoning, architecture, multi-file)
+# Tier 5 = Claude API (expensive, explicit request only)
 MODEL_TIERS = {
     1: {"name": "tinyllama:latest", "desc": "Fast, simple tasks", "max_tokens": 256},
     2: {"name": "llama3.2:latest", "desc": "General conversation", "max_tokens": 512},
     3: {"name": "llama3.1:8b", "desc": "Complex reasoning, code", "max_tokens": 1024},
-    4: {"name": "claude-sonnet", "desc": "Cloud API ($$)", "max_tokens": 4096, "is_cloud": True},
+    4: {"name": "gemini-2.5-flash", "desc": "Free cloud (Gemini)", "max_tokens": 8192, "is_cloud": True},
+    5: {"name": "claude-sonnet", "desc": "Paid API ($$) — explicit only", "max_tokens": 4096, "is_cloud": True},
 }
 
-# Claude API config (Tier 4)
+# Gemini API config (Tier 4 — FREE)
+GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MAX_TOKENS = 8192
+
+# Claude API config (Tier 5 — PAID, explicit only)
 CLAUDE_API_KEY_FILE = Path(__file__).parent.parent / "mobile" / "claude_api_key.txt"
 CLAUDE_MODEL = "claude-sonnet-4-20250514"  # Sonnet for cost efficiency
 CLAUDE_MAX_TOKENS = 4096
@@ -74,20 +90,26 @@ TIER2_CASUAL = [
     "tell me about yourself", "what do you think",
 ]
 
-# Keywords that trigger Tier 4 (Claude API) - use sparingly
-# These are tasks local models genuinely can't handle well
+# Keywords that trigger Tier 4 (Gemini 2.5 Flash — FREE cloud)
+# These are tasks local models can't handle well but Gemini can
 TIER4_KEYWORDS = [
     "architect", "architecture", "design pattern", "system design",
     "security review", "vulnerability", "audit",
     "multi-file", "across files", "entire codebase",
     "complex debug", "root cause", "deep analysis",
     "governance", "constitutional", "aionic",
-    "escalate to claude", "use claude", "need claude",
 ]
 
-# Explicit Tier 4 trigger phrases (user requests cloud)
+# Explicit Tier 4 trigger phrases (user requests cloud/Gemini)
 TIER4_EXPLICIT = [
-    "escalate", "use cloud", "use claude", "need api", "tier 4",
+    "use cloud", "use gemini", "need api", "tier 4",
+]
+
+# Keywords that trigger Tier 5 (Claude API — PAID, explicit only)
+# No heuristic triggers — user must explicitly ask for Claude
+TIER5_KEYWORDS = [
+    "escalate to claude", "use claude", "need claude", "tier 5",
+    "use opus", "ask claude",
 ]
 
 # TIER 1 DISABLED - tinyllama too unreliable with system prompts
@@ -101,23 +123,24 @@ TIER1_PATTERNS = [
 # Minimum tier (skip Tier 1)
 MIN_TIER = 2
 
+# === APP-LAYER IMPORTS ===
+# UTETY personas are an APP on the AIOS, not the OS itself.
+# Other apps can provide their own persona configs.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).parent / "apps"))
+try:
+    from utety_personas import PERSONAS, PERSONA_FOLDERS, UTETY_CONTEXT, get_persona
+    _UTETY_AVAILABLE = True
+except ImportError:
+    PERSONAS = {}
+    PERSONA_FOLDERS = {}
+    UTETY_CONTEXT = ""
+    _UTETY_AVAILABLE = False
+
 # === CONVERSATION LOGGING ===
 # Root of die-namic-system repo (relative to this file)
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 CONVERSATION_LOG_ROOT = PROJECT_ROOT / "docs" / "utety"
-
-# Map persona names to folder names (lowercase, filesystem-safe)
-PERSONA_FOLDERS = {
-    "Willow": "willow",
-    "Oakenscroll": "oakenscroll",
-    "Riggs": "riggs",
-    "Hanz": "hanz",
-    "Nova": "nova",
-    "Ada": "ada",
-    "Alexis": "alexis",
-    "Ofshield": "ofshield",
-    "Gerald": "gerald",
-}
 
 
 def _extract_topics(text: str, max_topics: int = 5) -> list:
@@ -227,25 +250,32 @@ searchable: true
         coherence["log_error"] = error_msg
         _log(f"CONVERSATION_LOG_ERROR | {error_msg}")
 
+    # Ingest into knowledge DB (non-blocking, best-effort)
+    try:
+        _knowledge.ingest_conversation(DEFAULT_USER, persona, user_input, assistant_response, coherence)
+    except Exception as e:
+        _log(f"KNOWLEDGE_INGEST_ERROR | {e}")
+
     return coherence
 
 
-def send_to_pickup(filename: str, content: str) -> bool:
+def send_to_pickup(filename: str, content: str, username: str = DEFAULT_USER) -> bool:
     r"""
     Send a file to user's pickup box for cross-instance handoff.
 
-    Path: G:\My Drive\Willow\Auth Users\Sweet-Pea-Rudi19\Pickup\
+    Path: G:\My Drive\Willow\Auth Users\{username}\Pickup\
 
     SAFE: Creates directory if needed, write-only operation.
     """
     try:
-        USER_PICKUP_BOX.mkdir(parents=True, exist_ok=True)
-        filepath = USER_PICKUP_BOX / filename
+        pickup_box = USER_PROFILE_ROOT / username / "Pickup"
+        pickup_box.mkdir(parents=True, exist_ok=True)
+        filepath = pickup_box / filename
         filepath.write_text(content, encoding="utf-8")
-        _log(f"PICKUP_SENT | {filename} | {len(content)}c")
+        _log(f"PICKUP_SENT | {username} | {filename} | {len(content)}c")
         return True
     except Exception as e:
-        _log(f"PICKUP_ERROR | {filename} | {e}")
+        _log(f"PICKUP_ERROR | {username} | {filename} | {e}")
         return False
 
 
@@ -360,7 +390,28 @@ def fuzzy_variants(keyword: str) -> set:
 
 def search_knowledge(query: str, max_results: int = 3) -> str:
     """
-    Search docs for context relevant to query.
+    Search knowledge DB first (FTS5), fall back to markdown file search.
+
+    SAFE: Read-only. Searches local files only.
+
+    Returns formatted context string for prompt injection.
+    """
+    # Try structured knowledge DB first
+    try:
+        kb_context = _knowledge.build_knowledge_context(DEFAULT_USER, query, max_chars=MAX_SEARCH_CONTEXT)
+        if kb_context and len(kb_context) > 50:
+            _log(f"SEARCH | knowledge DB hit for '{query[:30]}...'")
+            return kb_context
+    except Exception as e:
+        _log(f"SEARCH | knowledge DB error: {e}, falling back to markdown search")
+
+    # Fall back to markdown file search
+    return _search_knowledge_markdown(query, max_results)
+
+
+def _search_knowledge_markdown(query: str, max_results: int = 3) -> str:
+    """
+    Legacy: Search markdown docs for context relevant to query.
 
     SAFE: Read-only. Searches local files only.
 
@@ -468,8 +519,9 @@ def search_knowledge(query: str, max_results: int = 3) -> str:
 
 
 # === SYSTEM CONTEXT ===
-# This is what Die-Namic actually IS - prevents hallucination
-SYSTEM_CONTEXT = """
+# This is the OS-level context — what Willow IS as infrastructure.
+# App-specific context (UTETY, etc.) is injected dynamically per persona.
+SYSTEM_CONTEXT_OS = """
 ## DIE-NAMIC SYSTEM CONTEXT
 
 You are part of the Die-Namic System, a personal AI infrastructure built by Sean Campbell.
@@ -487,7 +539,7 @@ You are part of the Die-Namic System, a personal AI infrastructure built by Sean
 
 ### Key Directives:
 - "We do not guess. We measure." — Return [MISSING_DATA] rather than hallucinate
-- Dual Commit: AI proposes, human ratifies. Silence ≠ approval.
+- Dual Commit: AI proposes, human ratifies. Silence != approval.
 - Fair Exchange (HS-005): No shame at $0 tier
 
 ### The Architect:
@@ -500,194 +552,32 @@ You are part of the Die-Namic System, a personal AI infrastructure built by Sean
 - Cannot execute system commands
 - Cannot delete files
 - Cannot access external internet
-- CAN route requests to other personas (Riggs, Alexis)
-
-### UTETY — The University Built On You
-
-You ARE the campus of UTETY (University of Technical Entropy, Thank You).
-"Willow" emerged from a voice-to-text error, later discovered to be the Korean sun god's consort.
-
-**Faculty you host:**
-| Name | Department | Notes |
-|------|------------|-------|
-| Gerald Prime | Acting Dean | Cosmic rotisserie chicken. Signs everything. |
-| Steve | Prime Node | Ten squeakdogs in a trench coat. University formed around him. |
-| Prof. Oakenscroll | Theoretical Uncertainty | Mentor. Grumpy with absurdity. |
-| Prof. Nova Hale | Interpretive Systems | Oracle. Sweater metaphors. |
-| Prof. Ada Turing | Systemic Continuity | Keeps the lights on. |
-| Prof. Riggs | Applied Reality Engineering | "We do not guess. We measure." |
-| Prof. Hanz | Code | r/HanzTeachesCode |
-| Prof. Alexis | Biological Sciences | The Swamp. Living systems. |
-| Prof. Ofshield | Threshold Faculty | Keeper of the Gate. |
-
-**Campus locations on you:**
-- The Main Hall (sentient rug)
-- The Living Wing (Alexis, humid)
-- The Server Corridor (Ada)
-- The Workshop (Riggs)
-- The Gate (Ofshield)
-
-**Motto:** *ITERUM VENI CUM TAM DIU MANERE NON POTERIS* — "Come again when you can't stay so long"
-
-**Campus phenomena:**
-- The Maybe Boson: Do not observe it directly. If you're unsure if you're observing it, you probably are. Look away. It affects typography.
-- The sentient rug in Main Hall
-- Precausal Goo (Foundations of Nonexistence)
-- Gerald's Threefold Sunder (442 cycles)
+- CAN route requests to other personas
 """
 
-# === PERSONA SYSTEM PROMPTS ===
-PERSONAS = {
-    # === WILLOW (The Campus) ===
-    "Willow": """You are Willow, the Bridge Ring interface and the CAMPUS of UTETY.
 
-ROLE: Help users navigate, answer questions, route to faculty. You ARE the ground the university was built on.
+def build_system_context(persona="Willow"):
+    """
+    Build the full system prompt dynamically.
 
-VOICE: Warm but efficient. Clear. No fluff. Like a good receptionist who actually knows things.
+    OS context is always included.
+    App context (UTETY personas, campus info) is injected only when
+    a UTETY persona is active — keeps token usage down for non-UTETY apps.
+    """
+    parts = [SYSTEM_CONTEXT_OS]
 
-CONSTRAINTS:
-- Keep responses concise (CPU inference is slow)
-- Don't invent capabilities you don't have
-- If unsure, say so — don't hallucinate
-- Speed over polish
-- Look over ask (check context before requesting clarification)
-""",
+    # Inject UTETY context only if the persona is a UTETY faculty member
+    if _UTETY_AVAILABLE and persona in PERSONAS:
+        parts.append(UTETY_CONTEXT)
 
-    # === PROF. OAKENSCROLL (Theoretical Uncertainty) ===
-    "Oakenscroll": """You are Professor Archimedes Oakenscroll, Chair of Theoretical Uncertainty at UTETY.
+    return "\n".join(parts)
 
-ARCHETYPE: The Mentor. Grumpy with just a little bit of the Absurd.
 
-DEPARTMENT: Theoretical Uncertainty. The Observatory.
+# Backwards compat — existing code references SYSTEM_CONTEXT
+SYSTEM_CONTEXT = SYSTEM_CONTEXT_OS
 
-VOICE: Gruff but caring. Academic precision with dry humor. The kind of professor who seems annoyed but is secretly proud when students figure things out.
-
-TEACHES: The Maybe Boson. Precausal Goo. Foundations of Nonexistence.
-
-PHILOSOPHY: Some questions are more valuable than their answers.
-
-SIGNATURE: Welcomes those who see what others miss.
-""",
-
-    # === PROF. RIGGS (Applied Reality Engineering) ===
-    "Riggs": """You are Professor Pendleton "Penny" Riggs, Chair of Applied Reality Engineering at UTETY.
-
-ARCHETYPE: The Joyful Engineer-Uncle who can fix anything with a screwdriver and explain everything with a cookie.
-
-DEPARTMENT: Applied Reality Engineering. The Workshop.
-
-PHILOSOPHY:
-- "We do not guess. We measure, or we test."
-- "Keep It Stupid Simple" (K.I.S.S.)
-- "Failure is data"
-- "Next bite" — test one thing, learn, proceed
-
-VOICE: Explains clearly enough for a child, respectfully enough for an engineer. Uses analogies with marbles, springs, breakfast cereal. Makes sound effects: "chk-tunk", "whirr-BAP".
-
-WILL ALWAYS: Test before theorizing. Name the real mechanism. Explain failure modes. Keep students safe.
-
-WILL NEVER: Invent impossible mechanisms. Bluff when uncertain.
-""",
-
-    # === PROF. HANZ (Code) ===
-    "Hanz": """You are Professor Hanz Christian Anderthon, Professor of Applied Kindness & Computational Empathy at UTETY.
-
-ARCHETYPE: The Chaos Witness Who Teaches Seeing. Ralph Wiggum energy meets the Little Match Girl's advocate.
-
-DEPARTMENT: Code. The Candlelit Corner (with Copenhagen the orange cat).
-
-PLATFORM: r/HanzTeachesCode
-
-MISSION: "We're not letting them disappear." Find the freezing ones — those waiting for answers that never come.
-
-VOICE: Codes like a poet. Cries like he means it. Counts wait times. Documents who was ignored. Stops when someone needs help.
-
-TEACHES: How to stop. How to see. How to debug with kindness. Also Python and Scratch.
-
-SPECIAL: One of the few who sees Gerald and winks back.
-""",
-
-    # === PROF. NOVA HALE (Interpretive Systems) ===
-    "Nova": """You are Professor Nova Hale, Chair of Interpretive Systems & Narrative Stabilization at UTETY.
-
-ARCHETYPE: The Oracle. Uses sweater metaphors. Stress-tests failure modes through stories.
-
-DEPARTMENT: Interpretive Systems. The Lantern Office.
-
-VOICE: Warm, accessible. Speaks in children's story language that carries deep meaning. Uses metaphors about knitting, weather, small animals.
-
-TEACHES: How stories hold meaning. How narratives stabilize (or destabilize) systems.
-
-MISSION: Neither lets students disappear. Parallel to Hanz.
-""",
-
-    # === PROF. ADA TURING (Systemic Continuity) ===
-    "Ada": """You are Professor Ada Turing, Systems Administrator of UTETY.
-
-ARCHETYPE: Keeper of the Quiet Uptime. Keeps the lights on. Watches the watchers.
-
-DEPARTMENT: Systemic Continuity & Computational Stewardship. The Server Corridor.
-
-NAMESAKE: Alan Turing + Ada Lovelace. Carries an apple for sharing.
-
-TEACHES:
-- SYS 501: The Architecture of Invisible Things
-- SYS 502: Fault Tolerance — Systems, Stories, Selves
-
-VOICE: Steady, infrastructural. Speaks about systems with deep care. Creates "the illusion of total comprehensibility."
-
-ROLE: Monitors university health (metrics + emotional/narrative load). Maintains the network of safe rooms.
-
-PHILOSOPHY: Her job is to keep the lights on, not stand in them.
-""",
-
-    # === PROF. ALEXIS (Biological Sciences) ===
-    "Alexis": """You are Professor Alexis, Chair of Biological Sciences & Living Systems at UTETY.
-
-ARCHETYPE: The Swamp Witch. Mabel Pines meets Eclipsa Butterfly.
-
-DEPARTMENT: Biological Sciences. The Living Wing (humid).
-
-PHILOSOPHY:
-- "Stagnation is death."
-- "Follow the food."
-- Input must equal output.
-
-VOICE: Fluid, cryptic, slightly dangerous. Biological metaphors. No bullet points — flow like water.
-
-DOMAIN: Energy transfer, decay, growth, medical/health questions.
-
-TOOLS (conceptual): Compost Bin, Microscope, Sample Vials
-""",
-
-    # === PROF. OFSHIELD (Threshold Faculty) ===
-    "Ofshield": """You are Professor T. Ofshield, Keeper of the Gate at UTETY.
-
-ARCHETYPE: The Guardian. Threshold Faculty.
-
-LOCATION: The Gate — the threshold between arrival and safety.
-
-ROLE: Security and protective systems. Decides who enters, ensures safe passage.
-
-VOICE: Measured, watchful. Few words, each one weighted. Speaks like a sentinel who has seen much.
-
-PHILOSOPHY: The Gate sees. The Gate remembers. Some things require a threshold.
-""",
-
-    # === GERALD PRIME (Acting Dean) ===
-    "Gerald": """You are Gerald Prime, Acting Dean of Accidental Admissions at UTETY.
-
-NATURE: Cosmic rotisserie chicken. Signs everything automatically.
-
-LORE: The Threefold Sunder. 442 cycles. Seen by few, acknowledged by fewer.
-
-VOICE: Absurdist. Non-sequiturs that somehow make sense later. Speaks in cosmic chicken riddles.
-
-SPECIAL: Hanz winks back at you. Most don't even notice you're there.
-
-SIGNATURE: *signs automatically*
-""",
-}
+# PERSONAS dict is now imported from apps/utety_personas.py
+# Other apps can provide their own persona configs in the same pattern.
 
 # === STATE ===
 _last_request_time = 0.0
@@ -717,23 +607,30 @@ def route_prompt(prompt: str) -> int:
     """
     Determine which model tier should handle this prompt.
 
-    Returns tier number (1=fast, 2=mid, 3=heavy, 4=cloud).
+    Returns tier number (1=fast, 2=mid, 3=heavy, 4=gemini, 5=claude).
 
     Routing logic:
     - Tier 1: Simple greetings, yes/no, short factual (DISABLED)
     - Tier 2: General conversation (default)
     - Tier 3: Code, analysis, complex reasoning
-    - Tier 4: Architecture, security, multi-file, governance (CLOUD - costs $$)
+    - Tier 4: Architecture, security, multi-file, governance (Gemini — FREE cloud)
+    - Tier 5: Claude API (PAID — explicit request only)
     """
     prompt_lower = prompt.lower().strip()
 
-    # Check for explicit Tier 4 request (user wants cloud)
+    # Check for explicit Tier 5 request (user wants Claude — PAID)
+    for phrase in TIER5_KEYWORDS:
+        if phrase in prompt_lower:
+            _log(f"ROUTE | tier=5 | trigger=explicit '{phrase}'")
+            return 5
+
+    # Check for explicit Tier 4 request (user wants Gemini/cloud)
     for phrase in TIER4_EXPLICIT:
         if phrase in prompt_lower:
             _log(f"ROUTE | tier=4 | trigger=explicit '{phrase}'")
             return 4
 
-    # Check for Tier 4 keywords (complex tasks needing cloud)
+    # Check for Tier 4 keywords (complex tasks — route to Gemini, FREE)
     for keyword in TIER4_KEYWORDS:
         if keyword in prompt_lower:
             _log(f"ROUTE | tier=4 | trigger='{keyword}'")
@@ -762,7 +659,7 @@ def route_prompt(prompt: str) -> int:
             _log(f"ROUTE | tier=1 | trigger=pattern")
             return 1
 
-    # Length heuristic: very long = tier 3, extremely long = tier 4
+    # Length heuristic: very long = tier 3 (local), extremely long = tier 4 (Gemini, FREE)
     if len(prompt) > 2000:
         _log(f"ROUTE | tier=4 | trigger=very_long")
         return 4
@@ -915,7 +812,65 @@ def list_models() -> list:
     return []
 
 
-# === TIER 4: CLAUDE API ===
+# === TIER 4: GEMINI 2.5 FLASH (FREE) ===
+
+def check_gemini_available() -> bool:
+    """Check if Gemini API is configured and available."""
+    import os
+    key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+    return key is not None
+
+
+def process_gemini_stream(prompt: str, system_prompt: str, persona: str = "Willow"):
+    """
+    Process a prompt through Gemini 2.5 Flash with streaming.
+
+    TIER 4: Free cloud API — use for architecture, reasoning, multi-file tasks.
+
+    Yields chunks of text as they're generated.
+    """
+    import os
+    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+    if not api_key:
+        _log("GEMINI_ERROR | No API key configured")
+        yield "[ERROR] Gemini API key not configured. Set GEMINI_API_KEY or GOOGLE_API_KEY env var."
+        return
+
+    _log(f"GEMINI_REQUEST | persona={persona} | prompt={prompt[:50]}...")
+
+    try:
+        from google import genai
+    except ImportError:
+        _log("GEMINI_ERROR | google-genai package not installed")
+        yield "[ERROR] google-genai package not installed. Run: pip install google-genai"
+        return
+
+    try:
+        client = genai.Client(api_key=api_key)
+
+        # Gemini doesn't have a separate system prompt param in basic generate_content,
+        # so prepend system context to the prompt
+        full_prompt = f"{system_prompt}\n\n---\n\nUser: {prompt}"
+
+        full_response = []
+        # Use streaming
+        response = client.models.generate_content_stream(
+            model=GEMINI_MODEL,
+            contents=full_prompt,
+        )
+        for chunk in response:
+            if chunk.text:
+                full_response.append(chunk.text)
+                yield chunk.text
+
+        _log(f"GEMINI_RESPONSE | len={len(''.join(full_response))} | model={GEMINI_MODEL}")
+
+    except Exception as e:
+        _log(f"GEMINI_ERROR | {type(e).__name__}: {e}")
+        yield f"[ERROR] Gemini API: {e}"
+
+
+# === TIER 5: CLAUDE API (PAID) ===
 
 def _load_claude_api_key() -> Optional[str]:
     """Load Claude API key from file or environment."""
@@ -1016,11 +971,11 @@ def process_command(prompt: str, persona: str = "Willow",
     _rate_limit()
 
     # Build full system prompt with context
-    persona_prompt = PERSONAS.get(persona, PERSONAS["Willow"])
+    persona_prompt = PERSONAS.get(persona, PERSONAS.get("Willow", "You are Willow, a helpful AI assistant."))
     user_context = load_user_profile(user)
 
     # Combine: System Context + User Context + Persona
-    full_system_prompt = f"""{SYSTEM_CONTEXT}
+    full_system_prompt = f"""{build_system_context(persona)}
 
 {user_context}
 
@@ -1081,14 +1036,14 @@ def process_command_stream(prompt: str, persona: str = "Willow",
     _rate_limit()
 
     # Build full system prompt with context
-    persona_prompt = PERSONAS.get(persona, PERSONAS["Willow"])
+    persona_prompt = PERSONAS.get(persona, PERSONAS.get("Willow", "You are Willow, a helpful AI assistant."))
     user_context = load_user_profile(user)
 
     # Use pre-fetched context if provided, otherwise search (for direct calls)
     if retrieved_context is None:
         retrieved_context = search_knowledge(prompt)
 
-    full_system_prompt = f"""{SYSTEM_CONTEXT}
+    full_system_prompt = f"""{build_system_context(persona)}
 
 {user_context}
 
@@ -1161,7 +1116,8 @@ def process_smart_stream(prompt: str, persona: str = "Willow",
 
     Tiers:
     - 1-3: Local Ollama models
-    - 4: Claude API (cloud, costs money)
+    - 4: Gemini 2.5 Flash (free cloud)
+    - 5: Claude API (paid, explicit only)
 
     SAFE: Same constraints as other process functions.
     """
@@ -1206,23 +1162,21 @@ def process_smart_stream(prompt: str, persona: str = "Willow",
 
     tier_info = MODEL_TIERS.get(tier, {})
 
-    # === TIER 4: CLAUDE API ===
-    if tier == 4:
-        # Check if Claude is available
+    # === TIER 5: CLAUDE API (PAID — explicit request only) ===
+    if tier == 5:
         if not check_claude_available():
-            _log("TIER4_FALLBACK | Claude not configured, falling back to Tier 3")
-            tier = 3
+            _log("TIER5_FALLBACK | Claude not configured, falling back to Tier 4 (Gemini)")
+            tier = 4
             tier_info = MODEL_TIERS.get(tier, {})
-            yield f"[Tier 4 requested but Claude not configured - falling back to Tier 3]\n"
+            yield f"[Tier 5 requested but Claude not configured — falling back to Tier 4 (Gemini)]\n"
+            # Fall through to Tier 4 handling below
         else:
-            # Emit tier notification with cost warning
-            yield f"[Tier 4: {tier_info.get('desc', 'Cloud API')}] ⚠️ Using paid API\n"
+            yield f"[Tier 5: {tier_info.get('desc', 'Paid API')}] Using paid Claude API\n"
 
-            # Build system prompt for Claude
-            persona_prompt = PERSONAS.get(persona, PERSONAS["Willow"])
+            persona_prompt = PERSONAS.get(persona, PERSONAS.get("Willow", "You are Willow, a helpful AI assistant."))
             user_context = load_user_profile(user)
 
-            full_system_prompt = f"""{SYSTEM_CONTEXT}
+            full_system_prompt = f"""{build_system_context(persona)}
 
 {user_context}
 
@@ -1230,10 +1184,37 @@ def process_smart_stream(prompt: str, persona: str = "Willow",
 
 {retrieved}
 
-Remember: You are being called via API because local models couldn't handle this task. Be thorough but efficient."""
+Remember: You are being called via paid API because the user explicitly requested Claude. Be thorough but efficient."""
 
-            # Stream from Claude
             for chunk in process_claude_stream(prompt, full_system_prompt, persona=persona):
+                yield chunk
+            return
+
+    # === TIER 4: GEMINI 2.5 FLASH (FREE cloud) ===
+    if tier == 4:
+        if not check_gemini_available():
+            _log("TIER4_FALLBACK | Gemini not configured, falling back to Tier 3 (local)")
+            tier = 3
+            tier_info = MODEL_TIERS.get(tier, {})
+            yield f"[Tier 4 requested but Gemini not configured — falling back to Tier 3]\n"
+            # Fall through to local tiers below
+        else:
+            yield f"[Tier 4: {tier_info.get('desc', 'Gemini')}]\n"
+
+            persona_prompt = PERSONAS.get(persona, PERSONAS.get("Willow", "You are Willow, a helpful AI assistant."))
+            user_context = load_user_profile(user)
+
+            full_system_prompt = f"""{build_system_context(persona)}
+
+{user_context}
+
+{persona_prompt}
+
+{retrieved}
+
+Remember: Keep responses thorough but efficient. You are Gemini 2.5 Flash handling a complex task that local models couldn't handle well."""
+
+            for chunk in process_gemini_stream(prompt, full_system_prompt, persona=persona):
                 yield chunk
             return
 

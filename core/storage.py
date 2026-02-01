@@ -52,7 +52,7 @@ else:  # Unix/Linux/Mac
     def unlock_file(f):
         fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
-from state import (
+from .state import (
     RuntimeState,
     AuditEntry,
     GateEvent,

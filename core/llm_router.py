@@ -76,7 +76,7 @@ PROVIDERS = [
     # --- TIER 1: TRULY FREE (Local / Grant) ---
     ProviderConfig("Ollama", "PATH", "http://localhost:11434/api/generate", "llama3.2:latest", "free"),
     ProviderConfig("Google Gemini", "GEMINI_API_KEY", "https://generativelanguage.googleapis.com/v1beta/models/", "gemini-2.5-flash", "free"),
-    ProviderConfig("Groq", "GROQ_API_KEY", "https://api.groq.com/openai/v1/chat/completions", "llama3-8b-8192", "free"),
+    ProviderConfig("Groq", "GROQ_API_KEY", "https://api.groq.com/openai/v1/chat/completions", "llama-3.1-8b-instant", "free"),
     ProviderConfig("Cerebras", "CEREBRAS_API_KEY", "https://api.cerebras.ai/v1/chat/completions", "llama3.1-8b", "free"),
     ProviderConfig("SambaNova", "SAMBANOVA_API_KEY", "https://api.sambanova.ai/v1/chat/completions", "Meta-Llama-3.1-8B-Instruct", "free"),
     ProviderConfig("HuggingFace Inference", "HUGGINGFACE_API_KEY", "https://api-inference.huggingface.co/models/", "meta-llama/Meta-Llama-3-8B-Instruct", "free"),
@@ -145,24 +145,34 @@ def ask(prompt: str, preferred_tier: str = "free") -> Optional[RouterResponse]:
                     "model": provider.model,
                     "prompt": prompt,
                     "stream": False
-                }, timeout=30)
+                }, timeout=120)
                 if resp.status_code == 200:
                     return RouterResponse(resp.json()['response'], provider.name, provider.tier)
+                else:
+                    logging.warning(f"Provider {provider.name} returned {resp.status_code} — trying next")
+                    continue
 
             # --- OPENAI-COMPATIBLE ADAPTER (Groq, DeepSeek, Cerebras, etc) ---
             elif provider.name in ["Groq", "DeepSeek", "Cerebras", "SambaNova", "Together.ai", "OpenRouter", "OpenAI"]:
                 headers = {"Authorization": f"Bearer {os.environ.get(provider.env_key)}"}
                 if provider.name == "OpenRouter":
                     headers["HTTP-Referer"] = "https://github.com/die-namic"
-                
+
                 payload = {
                     "model": provider.model,
                     "messages": [{"role": "user", "content": prompt}]
                 }
-                
+
                 resp = requests.post(provider.base_url, json=payload, headers=headers, timeout=30)
                 if resp.status_code == 200:
                     return RouterResponse(resp.json()['choices'][0]['message']['content'], provider.name, provider.tier)
+                elif resp.status_code == 429:
+                    logging.warning(f"Provider {provider.name} quota exceeded (429) — trying next")
+                    continue
+                else:
+                    body = resp.text[:200] if resp.text else "no body"
+                    logging.warning(f"Provider {provider.name} returned {resp.status_code}: {body} — trying next")
+                    continue
 
             # --- GEMINI ADAPTER ---
             elif provider.name == "Google Gemini":
@@ -171,6 +181,12 @@ def ask(prompt: str, preferred_tier: str = "free") -> Optional[RouterResponse]:
                 resp = requests.post(url, json=payload, timeout=30)
                 if resp.status_code == 200:
                     return RouterResponse(resp.json()['candidates'][0]['content']['parts'][0]['text'], provider.name, provider.tier)
+                elif resp.status_code == 429:
+                    logging.warning(f"Provider {provider.name} quota exceeded (429) — trying next")
+                    continue
+                else:
+                    logging.warning(f"Provider {provider.name} returned {resp.status_code} — trying next")
+                    continue
 
             # --- ANTHROPIC ADAPTER ---
             elif provider.name == "Anthropic Claude":
@@ -187,6 +203,12 @@ def ask(prompt: str, preferred_tier: str = "free") -> Optional[RouterResponse]:
                 resp = requests.post(provider.base_url, json=payload, headers=headers, timeout=30)
                 if resp.status_code == 200:
                     return RouterResponse(resp.json()['content'][0]['text'], provider.name, provider.tier)
+                elif resp.status_code == 429:
+                    logging.warning(f"Provider {provider.name} quota exceeded (429) — trying next")
+                    continue
+                else:
+                    logging.warning(f"Provider {provider.name} returned {resp.status_code} — trying next")
+                    continue
 
         except Exception as e:
             logging.warning(f"Provider {provider.name} failed: {e}")

@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Ernie';
+  src: url('/fonts/AdobeHandwriting-Ernie.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --page: #fdfcf8;
+  --ink: #2c2c2c;
+  --pencil: rgba(44, 44, 44, 0.20);
+  --pencil-active: rgba(44, 44, 44, 0.60);
+  --pencil-faint: rgba(44, 44, 44, 0.15);
+  --pencil-ghost: rgba(44, 44, 44, 0.05);
+  --coherence-stable: #4a90d9;
+  --coherence-regen: #d4a017;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--page);
+  color: var(--ink);
+  font-family: Georgia, serif;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* Pencil line styles — replaces borders */
+.pencil-line {
+  border-bottom: 1px solid var(--pencil);
+}
+.pencil-line-active {
+  border-bottom: 1px solid var(--pencil-active);
+}
+.pencil-line-faint {
+  border-bottom: 1px solid var(--pencil-faint);
+}
+
+/* Transition defaults for Aionic opacity shifts */
+.aionic-fade {
+  transition: opacity 300ms linear;
+}
+
+/* Scrollbar — keep it faint */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--pencil-faint);
+  border-radius: 2px;
+}
+
+/* Drop zone active state */
+.drop-active {
+  outline: 1px solid var(--pencil);
+  outline-offset: -4px;
+}

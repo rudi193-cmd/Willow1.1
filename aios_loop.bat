@@ -1,20 +1,31 @@
 @echo off
-title Willow AIOS Supervisor
+setlocal
+cd /d "%~dp0"
+title Willow AIOS — Engine Only (Headless)
 
 echo ==================================================
-echo   WILLOW SOVEREIGNTY NODE [ALBUQUERQUE]
-echo   Initializing Nervous System...
+echo   WILLOW ENGINE — HEADLESS MODE
+echo   File intake + processing only. No chat interface.
 echo ==================================================
+echo.
 
-:: 1. Ignite the Intake Engine (Watch the Drop)
-start "Willow Intake (Sensing)" python willow.py
+:: Start Ollama if not running
+curl -s http://localhost:11434/api/tags >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [*] Starting Ollama...
+    start "OLLAMA" /min ollama serve
+    timeout /t 5 >nul
+)
 
-:: 2. Ignite the Refinery (Sort the Ore)
-start "Kartikeya Refinery (Sorting)" python kart.py
+:: Start the AIOS engine
+start "AIOS ENGINE" python aios_loop.py
+
+:: Start Kart refinery
+start "KARTIKEYA REFINERY" python kart.py --user Sweet-Pea-Rudi19
 
 echo.
-echo [SYSTEM ONLINE]
-echo Both engines are running in parallel.
-echo You may minimize this window, but do not close the spawned terminals.
+echo [ONLINE] Engine + Refinery running in background.
+echo Close this window anytime — background processes keep running.
+echo Use KILL_SWITCH.bat to stop everything.
 echo.
 pause
