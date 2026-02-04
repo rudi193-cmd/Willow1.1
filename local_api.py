@@ -67,9 +67,10 @@ CLAUDE_API_KEY_FILE = Path(__file__).parent.parent / "mobile" / "claude_api_key.
 CLAUDE_MODEL = "claude-sonnet-4-20250514"  # Sonnet for cost efficiency
 CLAUDE_MAX_TOKENS = 4096
 
-# Default tier
-DEFAULT_TIER = 2
-MODEL_FAST = MODEL_TIERS[2]["name"]
+# Default tier — Gemini (free cloud, fast)
+# Local Ollama is fallback when cloud is unavailable
+DEFAULT_TIER = 4
+MODEL_FAST = MODEL_TIERS[2]["name"]  # Local fallback model
 MODEL_VISION = "llama3.2-vision:latest"
 
 # Keywords that trigger tier escalation (must be real technical work)
@@ -609,12 +610,11 @@ def route_prompt(prompt: str) -> int:
 
     Returns tier number (1=fast, 2=mid, 3=heavy, 4=gemini, 5=claude).
 
-    Routing logic:
-    - Tier 1: Simple greetings, yes/no, short factual (DISABLED)
-    - Tier 2: General conversation (default)
-    - Tier 3: Code, analysis, complex reasoning
-    - Tier 4: Architecture, security, multi-file, governance (Gemini — FREE cloud)
+    Routing logic (cloud-first):
+    - Tier 4: DEFAULT — Gemini 2.5 Flash (free cloud, fast)
     - Tier 5: Claude API (PAID — explicit request only)
+    - Tier 2: Local Ollama fallback (only when Gemini unavailable)
+    - Tier 3: Heavy local (code tasks when offline)
     """
     prompt_lower = prompt.lower().strip()
 
@@ -624,52 +624,35 @@ def route_prompt(prompt: str) -> int:
             _log(f"ROUTE | tier=5 | trigger=explicit '{phrase}'")
             return 5
 
+    # Check for explicit local request (user wants Ollama)
+    for phrase in ["use local", "use ollama", "offline", "tier 2", "tier 1"]:
+        if phrase in prompt_lower:
+            _log(f"ROUTE | tier=2 | trigger=explicit local '{phrase}'")
+            return 2
+
     # Check for explicit Tier 4 request (user wants Gemini/cloud)
     for phrase in TIER4_EXPLICIT:
         if phrase in prompt_lower:
             _log(f"ROUTE | tier=4 | trigger=explicit '{phrase}'")
             return 4
 
-    # Check for Tier 4 keywords (complex tasks — route to Gemini, FREE)
-    for keyword in TIER4_KEYWORDS:
-        if keyword in prompt_lower:
-            _log(f"ROUTE | tier=4 | trigger='{keyword}'")
-            return 4
+    # Everything goes to Gemini (free, fast) unless Gemini is down
+    if check_gemini_available():
+        _log(f"ROUTE | tier=4 | trigger=cloud_first_default")
+        return 4
 
-    # Check for casual/roleplay - keep at Tier 2 for fast response
-    for pattern in TIER2_CASUAL:
-        if pattern in prompt_lower:
-            _log(f"ROUTE | tier=2 | trigger=casual '{pattern}'")
-            return 2
+    # Gemini unavailable — fall back to local routing
+    _log(f"ROUTE | tier=2 | trigger=gemini_unavailable_fallback")
 
-    # Short questions (under 100 chars) stay at Tier 2 unless they have code keywords
-    if len(prompt) < 100:
-        _log(f"ROUTE | tier=2 | trigger=short_question")
-        return 2
-
-    # Check for Tier 3 keywords (escalate to heavy local)
+    # Check for Tier 3 keywords (heavy local tasks)
     for keyword in TIER3_KEYWORDS:
         if keyword in prompt_lower:
-            _log(f"ROUTE | tier=3 | trigger='{keyword}'")
+            _log(f"ROUTE | tier=3 | trigger=local_fallback '{keyword}'")
             return 3
 
-    # Check for Tier 1 patterns (simple/fast)
-    for pattern in TIER1_PATTERNS:
-        if re.match(pattern, prompt_lower, re.IGNORECASE):
-            _log(f"ROUTE | tier=1 | trigger=pattern")
-            return 1
-
-    # Length heuristic: very long = tier 3 (local), extremely long = tier 4 (Gemini, FREE)
-    if len(prompt) > 2000:
-        _log(f"ROUTE | tier=4 | trigger=very_long")
-        return 4
-    if len(prompt) > 500:
-        _log(f"ROUTE | tier=3 | trigger=long")
-        return 3
-
-    # Default to tier 2 (respecting MIN_TIER)
-    tier = max(DEFAULT_TIER, MIN_TIER)
-    _log(f"ROUTE | tier={tier} | trigger=default")
+    # Default local fallback
+    tier = max(2, MIN_TIER)
+    _log(f"ROUTE | tier={tier} | trigger=local_fallback_default")
     return tier
 
 
@@ -1133,11 +1116,6 @@ def process_smart_stream(prompt: str, persona: str = "Willow",
         # Check if this is a casual/roleplay question (skip RAG for these)
         is_casual = any(pattern in prompt_lower for pattern in TIER2_CASUAL)
 
-        # FORCE Tier 2 for casual - override any other routing
-        if is_casual and tier > 2:
-            _log(f"TIER_OVERRIDE | casual question forcing Tier 2 (was {tier})")
-            tier = 2
-
     # Skip RAG entirely if tier was forced (caller knows what they want)
     retrieved = ""
     if force_tier is None:
@@ -1146,17 +1124,13 @@ def process_smart_stream(prompt: str, persona: str = "Willow",
         retrieval_signals = ["history", "remember", "discussed", "said", "mentioned", "last time", "previous", "earlier"]
         is_retrieval_query = any(kw in retrieval_signals for kw in keywords)
 
-        # Only escalate to Tier 3 if:
-        # 1. NOT a casual question (casual stays fast at Tier 2)
-        # 2. Query looks like a retrieval request (memory/history questions)
-        # 3. RAG actually finds substantial context
-        if not is_casual and is_retrieval_query and tier < 4:
+        # Inject RAG context if retrieval query (works with any tier including Gemini)
+        if not is_casual and is_retrieval_query:
             retrieved = search_knowledge(prompt)
-            if retrieved and len(retrieved) > 300:  # Substantial context threshold
-                tier = 3
-                _log(f"TIER_ESCALATE | retrieval query + RAG context, forcing Tier 3")
+            if retrieved and len(retrieved) > 300:
+                _log(f"RAG_INJECT | retrieval query, adding context to tier {tier}")
         elif is_casual:
-            _log(f"TIER_CASUAL | casual question, staying at Tier {tier}, skipping RAG")
+            _log(f"TIER_CASUAL | casual question at Tier {tier}, skipping RAG")
         else:
             _log(f"TIER_NORMAL | message at Tier {tier}")
 

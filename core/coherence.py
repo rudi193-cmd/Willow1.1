@@ -365,6 +365,48 @@ def check_intervention() -> Tuple[bool, str]:
     return get_tracker().needs_intervention()
 
 
+def get_cluster_coherence(cluster_label: str, atom_summaries: List[str]) -> Dict:
+    """
+    Compute aggregate ΔE-style coherence for a topic cluster.
+
+    Given a cluster label and the summaries of its member atoms,
+    measures how tightly the cluster holds together (internal coherence)
+    and returns a state classification.
+    """
+    if not atom_summaries:
+        return {"cluster": cluster_label, "coherence": 0.0, "state": "no_data", "members": 0}
+
+    tracker = CoherenceTracker(window_size=len(atom_summaries))
+
+    # Compute pairwise coherence across all atoms in the cluster
+    similarities = []
+    for i in range(len(atom_summaries)):
+        for j in range(i + 1, len(atom_summaries)):
+            sim = tracker._compute_similarity(atom_summaries[i], atom_summaries[j])
+            similarities.append(sim)
+
+    if not similarities:
+        avg = 0.6  # single-atom cluster baseline
+    else:
+        avg = sum(similarities) / len(similarities)
+
+    # Map coherence to ΔE-like state
+    if avg > 0.5:
+        state = "regenerative"
+    elif avg > 0.3:
+        state = "stable"
+    else:
+        state = "decaying"
+
+    return {
+        "cluster": cluster_label,
+        "coherence": round(avg, 4),
+        "state": state,
+        "members": len(atom_summaries),
+        "pairs_measured": len(similarities),
+    }
+
+
 # === CLI TEST ===
 if __name__ == "__main__":
     print("ΔE Coherence Tracker Test\n")

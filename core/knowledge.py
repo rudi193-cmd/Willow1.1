@@ -173,8 +173,72 @@ def init_db(username: str):
     except sqlite3.OperationalError:
         pass  # Column already exists
 
+    # --- Ring column (Möbius topology) ---
+    try:
+        cur.execute("ALTER TABLE knowledge ADD COLUMN ring TEXT DEFAULT 'bridge'")
+    except sqlite3.OperationalError:
+        pass  # Column already exists
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_knowledge_ring ON knowledge(ring)")
+
+    # --- Ring override (human-set, protected — Aios Addendum §4) ---
+    try:
+        cur.execute("ALTER TABLE knowledge ADD COLUMN ring_override TEXT")
+    except sqlite3.OperationalError:
+        pass  # Column already exists
+
     conn.commit()
     conn.close()
+
+
+# =========================================================================
+# Ring assignment (Möbius topology)
+# =========================================================================
+
+SOURCE_CATEGORIES = {"governance", "charter", "hard_stop", "seed", "architecture"}
+CONTINUITY_CATEGORIES = {"handoff", "summary", "memory", "journal"}
+
+
+def _assign_ring(category: str, source_type: str, title: str) -> str:
+    """Derive ring position from existing category/source_type fields."""
+    if source_type == "conversation":
+        return "continuity"
+    cat_lower = (category or "").lower()
+    if cat_lower in SOURCE_CATEGORIES:
+        return "source"
+    title_upper = (title or "").upper()
+    if any(kw in title_upper for kw in ("GOVERNANCE", "CHARTER", "HARD_STOP", "SEED_PACKET")):
+        return "source"
+    if cat_lower in CONTINUITY_CATEGORIES:
+        return "continuity"
+    if any(kw in title_upper for kw in ("HANDOFF", "JOURNAL", "ENTRY_")):
+        return "continuity"
+    return "bridge"
+
+
+def get_ring(category: str, source_type: str, title: str, ring_override: Optional[str] = None) -> str:
+    """Resolve ring position. Human override takes precedence (Aios Addendum §4)."""
+    if ring_override:
+        return ring_override
+    return _assign_ring(category, source_type, title)
+
+
+def backfill_rings(username: str) -> int:
+    """Assign ring values to existing atoms. Respects ring_override. Returns count updated."""
+    init_db(username)
+    conn = _connect(username)
+    cur = conn.cursor()
+    rows = cur.execute(
+        "SELECT id, category, source_type, title, ring_override FROM knowledge"
+    ).fetchall()
+    updated = 0
+    for row_id, category, source_type, title, ring_override in rows:
+        ring = get_ring(category, source_type, title, ring_override)
+        cur.execute("UPDATE knowledge SET ring=? WHERE id=?", (ring, row_id))
+        updated += 1
+    conn.commit()
+    conn.close()
+    logging.info(f"KNOWLEDGE: Backfilled rings for {updated} atoms")
+    return updated
 
 
 # =========================================================================
@@ -300,11 +364,12 @@ def ingest_file_knowledge(
 
     # Insert knowledge atom
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    ring = get_ring(category, "file", filename)
     cur.execute(
         """INSERT OR IGNORE INTO knowledge
-           (source_type, source_id, title, summary, content_snippet, category, created_at)
-           VALUES ('file', ?, ?, ?, ?, ?, ?)""",
-        (file_hash, filename, summary, snippet, category, now)
+           (source_type, source_id, title, summary, content_snippet, category, ring, created_at)
+           VALUES ('file', ?, ?, ?, ?, ?, ?, ?)""",
+        (file_hash, filename, summary, snippet, category, ring, now)
     )
     knowledge_id = cur.lastrowid
 
