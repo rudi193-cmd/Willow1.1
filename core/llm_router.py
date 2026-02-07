@@ -19,6 +19,9 @@ from pathlib import Path
 from typing import Optional, Dict, List
 from dataclasses import dataclass
 
+# Round-robin state
+_round_robin_index = {"free": 0, "cheap": 0, "paid": 0}
+
 # --- 1. KEY LOADER ( The Fix) ---
 def load_keys_from_json():
     """
@@ -133,23 +136,40 @@ def get_provider_count() -> Dict[str, int]:
         "total": sum(len(v) for v in avail.values())
     }
 
-def ask(prompt: str, preferred_tier: str = "free") -> Optional[RouterResponse]:
+def ask(prompt: str, preferred_tier: str = "free", use_round_robin: bool = True) -> Optional[RouterResponse]:
     """
-    Route the prompt to the best available provider.
-    Tries preferred_tier -> free -> cheap -> paid.
+    Route the prompt to a provider.
+
+    Args:
+        prompt: The prompt to send
+        preferred_tier: "free", "cheap", or "paid"
+        use_round_robin: If True, rotates through providers to distribute load
+
+    Returns:
+        RouterResponse or None if all providers fail
     """
     available = get_available_providers()
-    
+
     # Flatten priority list
     priority = []
     if preferred_tier in available:
-        priority.extend(available[preferred_tier])
-    
-    # Fallback cascade
+        tier_providers = available[preferred_tier][:]  # Copy list
+
+        # ROUND-ROBIN: Rotate providers in preferred tier
+        if use_round_robin and tier_providers:
+            idx = _round_robin_index[preferred_tier] % len(tier_providers)
+            # Rotate: move providers before idx to the end
+            tier_providers = tier_providers[idx:] + tier_providers[:idx]
+            # Update index for next call
+            _round_robin_index[preferred_tier] = (idx + 1) % len(tier_providers)
+
+        priority.extend(tier_providers)
+
+    # Fallback cascade to other tiers
     if preferred_tier != "free": priority.extend(available["free"])
     if preferred_tier != "cheap": priority.extend(available["cheap"])
     if preferred_tier != "paid": priority.extend(available["paid"])
-    
+
     if not priority:
         return None
 

@@ -716,6 +716,40 @@ def indexer_pass():
         logging.warning(f"INDEXER: {e}")
 
 
+def health_check_pass():
+    """Periodic health monitoring - checks nodes, queues, APIs."""
+    try:
+        sys.path.insert(0, os.path.join(EARTH_PATH, "core"))
+        from health import check_node_health, check_queue_health, check_api_health
+
+        # Run health checks (issues logged automatically with alerts)
+        check_node_health(stale_threshold_hours=24)
+        check_queue_health(backlog_threshold=50)
+        check_api_health()
+
+        logging.info("HEALTH: Monitoring pass complete")
+    except ImportError:
+        logging.debug("HEALTH: health.py not found, skipping.")
+    except Exception as e:
+        logging.warning(f"HEALTH: {e}")
+
+
+def pattern_anomaly_pass():
+    """Periodic anomaly detection - routing spikes, entity mentions."""
+    try:
+        sys.path.insert(0, os.path.join(EARTH_PATH, "core"))
+        from patterns import detect_anomalies
+
+        anomalies = detect_anomalies(lookback_days=7)
+        if anomalies:
+            logging.info(f"PATTERNS: Detected {len(anomalies)} anomalies")
+
+    except ImportError:
+        logging.debug("PATTERNS: patterns.py not found, skipping.")
+    except Exception as e:
+        logging.warning(f"PATTERNS: {e}")
+
+
 # =============================================================================
 # 4. GIT AUTO-PUSH (Artifacts auto, Code dual-commit)
 # =============================================================================
@@ -979,15 +1013,31 @@ def refinery_cycle(drive_service, username):
     pending_path = user_pending_path(username)
     os.makedirs(pending_path, exist_ok=True)
 
-    files = [f for f in os.listdir(pending_path) if f.lower().endswith(('.pdf', '.txt', '.md', '.jpg', '.jpeg', '.png'))]
+    # Process ANY file type - Willow can handle it
+    files = [f for f in os.listdir(pending_path) if os.path.isfile(os.path.join(pending_path, f))]
 
     if not files:
         return
 
     # Cap per cycle to avoid rate-limit storms (process rest next cycle)
-    BATCH_SIZE = 10
+    BATCH_SIZE = 20  # Reduced from 50 to work with round-robin provider rotation
+    total_pending = len(files)
+    batch_size = min(BATCH_SIZE, total_pending)
+
+    # Progress indicator
+    remaining_after = total_pending - batch_size
+    progress_pct = ((total_pending - remaining_after) / total_pending * 100) if total_pending > 0 else 0
+    eta_cycles = (remaining_after // BATCH_SIZE) + (1 if remaining_after % BATCH_SIZE else 0)
+    eta_minutes = eta_cycles * 0.17  # ~10 sec/cycle = 0.17 min/cycle
+
+    print(f"╔═══ BACKLOG [{username}] ═══")
+    print(f"║ Total pending: {total_pending}")
+    print(f"║ Processing this cycle: {batch_size}")
+    print(f"║ Remaining after: {remaining_after} ({progress_pct:.1f}% complete)")
+    print(f"║ ETA: {eta_cycles} cycles (~{eta_minutes:.1f} min)")
+    print(f"╚{'═' * 30}")
+
     if len(files) > BATCH_SIZE:
-        logging.info(f"REFINERY [{username}]: {len(files)} pending, processing {BATCH_SIZE} this cycle")
         files = files[:BATCH_SIZE]
 
     # Get the Map ONCE per cycle (per-user organic structure)
@@ -1110,6 +1160,25 @@ FOLDER:"""
                         except Exception as e:
                             logging.warning(f"ROUTING [{username}]: {filename} failed: {e}")
 
+                    # --- PATTERN LOGGING (Willow learns from routing decisions) ---
+                    try:
+                        from core import patterns
+                        ext = os.path.splitext(filename)[1].lower() or "unknown"
+                        all_destinations = [destination_folder]  # User profile destination
+                        if 'routed_to' in locals() and routed_to:
+                            all_destinations.extend([d for d in routed_to if d != 'user-profile'])
+
+                        patterns.log_routing_decision(
+                            filename=filename,
+                            file_type=ext,
+                            content_summary=context_content[:200] if context_content else "",
+                            routed_to=all_destinations,
+                            reason=f"Classified as {destination_folder} via {prov}",
+                            confidence=response.confidence if hasattr(response, 'confidence') else 0.8
+                        )
+                    except Exception as e:
+                        logging.debug(f"PATTERN LOGGING: {e}")
+
                     update_folder_readme(target_dir)
                     # Archive to Drive (move: upload + delete local)
                     archive_to_drive(drive_service, dest_filepath, username, destination_folder)
@@ -1165,6 +1234,12 @@ def main():
             # Indexer pass every 10th cycle
             if cycle_count % 10 == 0:
                 indexer_pass()
+            # Health check every 20th cycle (~3-4 minutes with 10s sleep)
+            if cycle_count % 20 == 0:
+                health_check_pass()
+            # Pattern anomaly detection every 30th cycle (~5 minutes)
+            if cycle_count % 30 == 0:
+                pattern_anomaly_pass()
             # Git auto-push once per hour (not every cycle)
             if time.time() - last_push_time >= GIT_PUSH_INTERVAL:
                 git_auto_push()
