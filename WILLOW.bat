@@ -9,7 +9,7 @@ echo   ___________
 echo.
 
 :: ── 1. OLLAMA ──────────────────────────────────────────
-echo [1/6] Ollama...
+echo [1/13] Ollama...
 curl -s http://localhost:11434/api/tags >nul 2>&1
 if %errorlevel% neq 0 (
     echo       Starting Ollama service...
@@ -23,7 +23,7 @@ if %errorlevel% neq 0 (
 echo       OK.
 
 :: ── 2. GOVERNANCE CHECK ────────────────────────────────
-echo [2/6] Governance...
+echo [2/13] Governance Check...
 for %%f in (core\state.py core\gate.py core\storage.py) do (
     if not exist %%f (
         echo       [FATAL] %%f missing. Halted.
@@ -34,17 +34,17 @@ for %%f in (core\state.py core\gate.py core\storage.py) do (
 echo       OK.
 
 :: ── 3. AIOS ENGINE (background) ───────────────────────
-echo [3/6] Engine...
+echo [3/13] Engine...
 start "AIOS ENGINE" /min python aios_loop.py
 echo       OK.
 
 :: ── 4. KARTIKEYA REFINERY (background) ────────────────
-echo [4/6] Kart...
+echo [4/13] Kart...
 start "KARTIKEYA REFINERY" /min python kart.py --user Sweet-Pea-Rudi19
 echo       OK.
 
 :: ── 5. WEB SERVER (background, wait for ready) ────────
-echo [5/6] Server...
+echo [5/13] Server...
 start "WILLOW SERVER" /min python server.py
 echo       Waiting for :8420...
 set retries=0
@@ -63,8 +63,43 @@ goto :wait_server
 :server_ok
 echo       OK. http://127.0.0.1:8420
 
-:: ── 6. TUNNEL + DEPLOY (foreground) ───────────────────
-echo [6/6] Tunnel...
+:: ── 6. GOVERNANCE MONITOR (background) ─────────────────
+echo [6/13] Governance Monitor...
+start "WILLOW-GovernanceMonitor" /min python governance\monitor.py --interval 60 --daemon
+echo       OK.
+
+:: ── 7. COHERENCE SCANNER (background) ──────────────────
+echo [7/13] Coherence Scanner...
+start "WILLOW-CoherenceScanner" /min python core\coherence_scanner.py --interval 3600 --daemon
+echo       OK.
+
+:: ── 8. TOPOLOGY BUILDER (background) ───────────────────
+echo [8/13] Topology Builder...
+start "WILLOW-TopologyBuilder" /min python core\topology_builder.py --interval 3600 --daemon
+echo       OK.
+
+:: ── 9. KNOWLEDGE COMPACTOR (background) ────────────────
+echo [9/13] Knowledge Compactor...
+start "WILLOW-KnowledgeCompactor" /min python core\knowledge_compactor.py --interval 86400 --daemon
+echo       OK.
+
+:: ── 10. SAFE SYNC (background) ─────────────────────────
+echo [10/13] SAFE Sync...
+start "WILLOW-SAFESync" /min python core\safe_sync.py --interval 300 --daemon
+echo       OK.
+
+:: ── 11. PERSONA SCHEDULER (background) ─────────────────
+echo [11/13] Persona Scheduler...
+start "WILLOW-PersonaScheduler" /min python core\persona_scheduler.py --interval 60 --daemon
+echo       OK.
+
+:: ── 12. INBOX WATCHER (background) ─────────────────────
+echo [12/13] Inbox Watcher...
+start "WILLOW-InboxWatcher" /min python apps\watcher.py --no-consent
+echo       OK.
+
+:: ── 13. TUNNEL + DEPLOY (foreground) ───────────────────
+echo [13/13] Tunnel...
 :: Check for local binary first, then PATH
 set CF_EXE=cloudflared
 if exist "%~dp0cloudflared.exe" set CF_EXE=%~dp0cloudflared.exe
@@ -99,6 +134,13 @@ echo   Shutting down...
 taskkill /FI "WINDOWTITLE eq AIOS ENGINE" >nul 2>&1
 taskkill /FI "WINDOWTITLE eq KARTIKEYA REFINERY" >nul 2>&1
 taskkill /FI "WINDOWTITLE eq WILLOW SERVER" >nul 2>&1
+taskkill /FI "WINDOWTITLE eq WILLOW-GovernanceMonitor" >nul 2>&1
+taskkill /FI "WINDOWTITLE eq WILLOW-CoherenceScanner" >nul 2>&1
+taskkill /FI "WINDOWTITLE eq WILLOW-TopologyBuilder" >nul 2>&1
+taskkill /FI "WINDOWTITLE eq WILLOW-KnowledgeCompactor" >nul 2>&1
+taskkill /FI "WINDOWTITLE eq WILLOW-SAFESync" >nul 2>&1
+taskkill /FI "WINDOWTITLE eq WILLOW-PersonaScheduler" >nul 2>&1
+taskkill /FI "WINDOWTITLE eq WILLOW-InboxWatcher" >nul 2>&1
 echo   All engines stopped.
 echo   (Ollama left running — use KILL_SWITCH in scripts\ to stop it)
 pause
