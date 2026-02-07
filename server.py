@@ -719,6 +719,34 @@ async def patterns_confirm_rule(request: Request):
         return {"error": str(e)}
 
 
+@app.post("/api/patterns/reject_rule")
+async def patterns_reject_rule(request: Request):
+    """User rejects a suggested routing rule."""
+    try:
+        from core import patterns
+        import sqlite3
+        body = await request.json()
+        pattern_type = body.get("pattern_type")
+        pattern_value = body.get("pattern_value")
+        destination = body.get("destination")
+
+        if not all([pattern_type, pattern_value, destination]):
+            return {"error": "Missing required fields"}
+
+        # Delete the suggestion from learned_preferences
+        conn = patterns._connect()
+        conn.execute("""
+            DELETE FROM learned_preferences
+            WHERE pattern_type = ? AND pattern_value = ? AND destination = ?
+        """, (pattern_type, pattern_value, destination))
+        conn.commit()
+        conn.close()
+
+        return {"success": True, "message": "Rule rejected and removed from suggestions"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @app.get("/api/patterns/anomalies")
 def patterns_anomalies():
     """Detect routing and entity anomalies."""
@@ -1072,6 +1100,78 @@ async def reset_provider_health(request: Request):
         conn.close()
 
         return {"success": True, "provider": provider_name, "message": f"{provider_name} health reset"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.get("/api/queues/files")
+async def get_queue_files(queue: str = None):
+    """List files in a specific user's pending queue."""
+    try:
+        if not queue:
+            return {"error": "Missing queue parameter"}
+
+        artifacts_path = Path(__file__).parent / "artifacts"
+        pending_dir = artifacts_path / queue / "pending"
+
+        if not pending_dir.exists():
+            return {"files": [], "message": "Queue does not exist"}
+
+        files = []
+        for file_path in pending_dir.iterdir():
+            if file_path.is_file():
+                stat = file_path.stat()
+                files.append({
+                    "name": file_path.name,
+                    "size": stat.st_size,
+                    "modified": stat.st_mtime
+                })
+
+        # Sort by modified time (newest first)
+        files.sort(key=lambda x: x["modified"], reverse=True)
+
+        return {"files": files, "queue": queue, "count": len(files)}
+    except Exception as e:
+        return {"error": str(e), "files": []}
+
+
+@app.post("/api/queues/clear")
+async def clear_queue(request: Request):
+    """Clear all files from a user's pending queue."""
+    try:
+        import shutil
+
+        body = await request.json()
+        queue = body.get("queue")
+
+        if not queue:
+            return {"error": "Missing queue parameter"}
+
+        # Security: validate queue name (no path traversal)
+        import re
+        if not re.match(r'^[a-zA-Z0-9_-]+$', queue):
+            return {"error": "Invalid queue name"}
+
+        artifacts_path = Path(__file__).parent / "artifacts"
+        pending_dir = artifacts_path / queue / "pending"
+
+        if not pending_dir.exists():
+            return {"error": "Queue does not exist"}
+
+        # Count files before deletion
+        file_count = len([f for f in pending_dir.iterdir() if f.is_file()])
+
+        # Delete all files in the pending directory
+        for file_path in pending_dir.iterdir():
+            if file_path.is_file():
+                file_path.unlink()
+
+        return {
+            "success": True,
+            "queue": queue,
+            "files_deleted": file_count,
+            "message": f"Cleared {file_count} files from {queue} queue"
+        }
     except Exception as e:
         return {"error": str(e)}
 

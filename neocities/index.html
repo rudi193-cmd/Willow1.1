@@ -154,7 +154,7 @@ const threads = {};
 
 // === BAKED DEFAULTS (patched by tunnel.py at deploy time) ===
 const BAKED_LAN = "192.168.12.189";
-const BAKED_TUNNEL = "";  // TUNNEL_INJECT_POINT
+const BAKED_TUNNEL = "https://aims-carriers-oecd-developers.trycloudflare.com";  // TUNNEL_INJECT_POINT
 const BAKED_GEMINI = "AIzaSyBMS935EFJACkJAqY3WotWXD7ERskYTk68";
 
 const cfg = {
@@ -391,6 +391,23 @@ async function sendFleetDirect(text) {
     );
     if (!r.ok) {
       const err = await r.text();
+
+      // If 429 (quota exceeded), try reconnecting to server (might have Oracle/Groq/etc)
+      if (r.status === 429) {
+        msgEl.textContent = "Gemini quota exceeded. Reconnecting to server...";
+        await discover();  // Retry connection discovery
+
+        // If we found a server, resend through it
+        if (mode !== "fleet") {
+          msgEl.remove();  // Remove error message
+          await sendServer(text);
+          return;
+        }
+
+        msgEl.textContent = "Gemini quota exceeded and server unavailable. Try again later.";
+        return;
+      }
+
       throw new Error(`${r.status}: ${err.slice(0, 200)}`);
     }
     const d = await r.json();
@@ -404,6 +421,8 @@ async function sendFleetDirect(text) {
     msgEl.textContent = "Gemini returned empty response.";
   } catch(e) {
     msgEl.textContent = "Gemini error: " + e.message;
+    // Also try reconnecting on other errors
+    setTimeout(() => discover(), 2000);
   }
 }
 

@@ -496,6 +496,82 @@ def ask(prompt: str, preferred_tier: str = "free", use_round_robin: bool = True)
 
     return None
 
+def ask_with_vision(prompt: str, image_data: str, preferred_tier: str = "free") -> Optional[str]:
+    """
+    Send a prompt with an image to a vision-capable LLM.
+
+    Args:
+        prompt: The text prompt
+        image_data: Base64-encoded image data
+        preferred_tier: Preferred tier (currently only "free" supports vision via Gemini)
+
+    Returns:
+        Response text or None if all providers fail
+    """
+    # Only Gemini 2.5 Flash supports vision in the free tier
+    if not os.environ.get("GEMINI_API_KEY"):
+        logging.warning("Vision requires Gemini API key")
+        return None
+
+    # Try Gemini Vision
+    provider = None
+    for p in PROVIDERS:
+        if p.name == "Google Gemini":
+            provider = p
+            break
+
+    if not provider:
+        logging.error("Gemini provider not configured")
+        return None
+
+    start_time = time.time()
+
+    try:
+        # Gemini multimodal API format
+        url = f"{provider.base_url}{provider.model}:generateContent?key={os.environ.get(provider.env_key)}"
+
+        payload = {
+            "contents": [{
+                "parts": [
+                    {"text": prompt},
+                    {
+                        "inline_data": {
+                            "mime_type": "image/jpeg",  # Assume JPEG, works for PNG too
+                            "data": image_data
+                        }
+                    }
+                ]
+            }]
+        }
+
+        resp = requests.post(url, json=payload, timeout=60)
+
+        if resp.status_code == 200:
+            response_time_ms = int((time.time() - start_time) * 1000)
+            response_text = resp.json()['candidates'][0]['content']['parts'][0]['text']
+
+            provider_health.record_success(provider.name, response_time_ms)
+
+            # Performance tracking
+            patterns_provider.log_provider_performance(
+                provider=provider.name,
+                file_type='image',
+                category='vision_ocr',
+                response_time_ms=response_time_ms,
+                success=True
+            )
+
+            return response_text
+        else:
+            provider_health.record_failure(provider.name, str(resp.status_code), resp.text[:200])
+            logging.warning(f"Gemini Vision returned {resp.status_code}: {resp.text[:200]}")
+            return None
+
+    except Exception as e:
+        provider_health.record_failure(provider.name, type(e).__name__, str(e))
+        logging.error(f"Gemini Vision failed: {e}")
+        return None
+
 def print_status():
     """Print available providers to console."""
     avail = get_available_providers()

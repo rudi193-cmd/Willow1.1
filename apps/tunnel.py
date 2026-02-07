@@ -171,6 +171,62 @@ def save_url(url: str):
     url_file.write_text(url, encoding="utf-8")
 
 
+def update_twilio_webhook(tunnel_url: str) -> dict:
+    """Update Twilio webhook URL to point to new tunnel."""
+    try:
+        from twilio.rest import Client
+        import os
+
+        # Load credentials from environment or keys
+        account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+        auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+        phone_number = os.getenv("TWILIO_PHONE_NUMBER")
+
+        if not all([account_sid, auth_token, phone_number]):
+            # Try loading from core.llm_router keys
+            try:
+                import sys
+                sys.path.insert(0, str(Path(__file__).parent.parent))
+                from core.llm_router import load_keys_from_json
+                keys = load_keys_from_json()
+                account_sid = keys.get("TWILIO_ACCOUNT_SID")
+                auth_token = keys.get("TWILIO_AUTH_TOKEN")
+                phone_number = keys.get("TWILIO_PHONE_NUMBER")
+            except Exception:
+                pass
+
+        if not all([account_sid, auth_token, phone_number]):
+            return {"error": "Twilio credentials not found"}
+
+        # Initialize Twilio client
+        client = Client(account_sid, auth_token)
+
+        # Get the phone number resource
+        phone_numbers = client.incoming_phone_numbers.list(phone_number=phone_number)
+
+        if not phone_numbers:
+            return {"error": f"Phone number {phone_number} not found"}
+
+        phone_sid = phone_numbers[0].sid
+
+        # Update the webhook URL for SMS
+        sms_webhook = f"{tunnel_url}/sms"
+        client.incoming_phone_numbers(phone_sid).update(
+            sms_url=sms_webhook,
+            sms_method="POST"
+        )
+
+        return {
+            "success": True,
+            "phone_number": phone_number,
+            "webhook_url": sms_webhook
+        }
+    except ImportError:
+        return {"error": "twilio package not installed (pip install twilio)"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 def get_saved_url() -> str:
     """Read the last known tunnel URL."""
     url_file = Path(__file__).parent.parent / ".tunnel_url"
@@ -226,7 +282,15 @@ if __name__ == "__main__":
         else:
             print(f"[tunnel] Deploy issue: {result}")
 
-    # Step 5: Hold tunnel open
+    # Step 5: Update Twilio webhook
+    print("[tunnel] Updating Twilio webhook...")
+    twilio_result = update_twilio_webhook(url)
+    if twilio_result.get("success"):
+        print(f"[tunnel] Twilio updated: {twilio_result['webhook_url']}")
+    else:
+        print(f"[tunnel] Twilio update skipped: {twilio_result.get('error', 'unknown error')}")
+
+    # Step 6: Hold tunnel open
     print(f"[tunnel] Running. Ctrl+C to stop.")
     try:
         proc.wait()

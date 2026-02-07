@@ -187,13 +187,358 @@
             document.getElementById('modal-overlay').classList.add('show');
 
             try {
-                if (type === 'nodes') await loadNodesModal();
+                if (type === 'providers') await loadProvidersModal();
+                else if (type === 'queues') await loadQueuesModal();
+                else if (type === 'rules') await loadRulesModal();
+                else if (type === 'patterns') await loadPatternsModal();
+                else if (type === 'nodes') await loadNodesModal();
                 else if (type === 'governance') await loadGovernanceModal();
                 else if (type === 'learning') await loadLearningModal();
                 else document.getElementById('modal-body').innerHTML = `<p>${type} modal coming soon...</p>`;
             } catch(e) {
                 document.getElementById('modal-body').innerHTML = `<p>Error: ${e.message}</p>`;
             }
+        }
+
+        async function loadProvidersModal() {
+            const r = await fetch('/api/health/providers');
+            const d = await r.json();
+            const providers = d.providers || {};
+
+            let html = '<table><tr><th>Provider</th><th>Status</th><th>Success Rate</th><th>Requests</th><th>Failures</th><th>Last Success</th><th>Blacklisted Until</th><th>Actions</th></tr>';
+            for (const [name, p] of Object.entries(providers)) {
+                const statusColor = p.status === 'healthy' ? '#00ff00' : p.status === 'degraded' ? '#ffaa00' : '#ff0000';
+                const rateColor = p.success_rate >= 80 ? '#00ff00' : p.success_rate >= 50 ? '#ffaa00' : '#ff0000';
+
+                const lastSuccess = p.last_success ? new Date(p.last_success).toLocaleString() : 'Never';
+                const blacklistedUntil = p.blacklisted_until ? new Date(p.blacklisted_until).toLocaleString() : '-';
+
+                let actions = '';
+                if (p.status === 'blacklisted') {
+                    actions += `<button onclick="unblacklistProvider('${name}')" style="background: #330000; border: 1px solid #ff0000; color: #ff0000; padding: 5px 10px; cursor: pointer; margin-right: 5px;">Unblacklist</button>`;
+                }
+                actions += `<button onclick="resetProviderHealth('${name}')" style="background: #003300; border: 1px solid #00ff00; color: #00ff00; padding: 5px 10px; cursor: pointer;">Reset</button>`;
+
+                html += `<tr>`;
+                html += `<td>${name}</td>`;
+                html += `<td style="color:${statusColor}">${p.status}</td>`;
+                html += `<td style="color:${rateColor}">${p.success_rate.toFixed(1)}%</td>`;
+                html += `<td>${p.total_requests}</td>`;
+                html += `<td>${p.consecutive_failures}</td>`;
+                html += `<td style="font-size: 11px;">${lastSuccess}</td>`;
+                html += `<td style="font-size: 11px;">${blacklistedUntil}</td>`;
+                html += `<td>${actions}</td>`;
+                html += `</tr>`;
+            }
+            html += '</table>';
+
+            html += '<div style="margin-top: 20px; padding: 15px; background: #111; border: 1px solid #00ff00;">';
+            html += '<h3 style="margin-bottom: 10px;">Provider Status Legend</h3>';
+            html += '<p style="color: #00cc00; margin-bottom: 5px;"><span style="color: #00ff00;">● Healthy:</span> Provider is operational and accepting requests</p>';
+            html += '<p style="color: #00cc00; margin-bottom: 5px;"><span style="color: #ffaa00;">● Degraded:</span> Provider has 1-4 consecutive failures</p>';
+            html += '<p style="color: #00cc00;"><span style="color: #ff0000;">● Blacklisted:</span> Provider has 5+ consecutive failures, excluded from rotation</p>';
+            html += '</div>';
+
+            document.getElementById('modal-body').innerHTML = html;
+        }
+
+        async function loadQueuesModal() {
+            const r = await fetch('/api/health/queues');
+            const d = await r.json();
+            const queues = d.queues || {};
+
+            let html = '<div id="queues-main-view">';
+            html += '<table><tr><th>Queue</th><th>Status</th><th>Files Pending</th><th>Message</th><th>Actions</th></tr>';
+            for (const [name, q] of Object.entries(queues)) {
+                const statusColor = q.status === 'healthy' ? '#00ff00' : q.status === 'elevated' ? '#ffaa00' : '#ff0000';
+
+                let actions = '';
+                actions += `<button onclick="viewQueueFiles('${name}')" style="background: #003300; border: 1px solid #00ff00; color: #00ff00; padding: 5px 10px; cursor: pointer; margin-right: 5px;">View Files</button>`;
+                if (q.count > 0) {
+                    actions += `<button onclick="clearQueue('${name}', ${q.count})" style="background: #330000; border: 1px solid #ff0000; color: #ff0000; padding: 5px 10px; cursor: pointer;">Clear Queue</button>`;
+                }
+
+                html += `<tr>`;
+                html += `<td>${name}</td>`;
+                html += `<td style="color:${statusColor}">${q.status}</td>`;
+                html += `<td>${q.count}</td>`;
+                html += `<td>${q.message}</td>`;
+                html += `<td>${actions}</td>`;
+                html += `</tr>`;
+            }
+            html += '</table>';
+
+            html += '<div style="margin-top: 20px; padding: 15px; background: #111; border: 1px solid #00ff00;">';
+            html += '<h3 style="margin-bottom: 10px;">Queue Status Legend</h3>';
+            html += '<p style="color: #00cc00; margin-bottom: 5px;"><span style="color: #00ff00;">● Healthy:</span> Normal operation, fewer than 25 files pending</p>';
+            html += '<p style="color: #00cc00; margin-bottom: 5px;"><span style="color: #ffaa00;">● Elevated:</span> 25-50 files pending, monitor closely</p>';
+            html += '<p style="color: #00cc00;"><span style="color: #ff0000;">● Backlog:</span> More than 50 files pending, requires attention</p>';
+            html += '</div>';
+            html += '</div>';
+
+            // Hidden file list view (shown when View Files is clicked)
+            html += '<div id="queue-files-view" style="display: none;"></div>';
+
+            document.getElementById('modal-body').innerHTML = html;
+        }
+
+        async function viewQueueFiles(queueName) {
+            const r = await fetch(`/api/queues/files?queue=${queueName}`);
+            const d = await r.json();
+
+            if (d.error) {
+                alert(`Error: ${d.error}`);
+                return;
+            }
+
+            const files = d.files || [];
+
+            let html = '<div style="margin-bottom: 15px;">';
+            html += `<button onclick="loadQueuesModal()" style="background: #003300; border: 1px solid #00ff00; color: #00ff00; padding: 8px 16px; cursor: pointer;">← Back to Queues</button>`;
+            html += '</div>';
+
+            html += `<h3 style="margin-bottom: 15px;">Files in Queue: ${queueName} (${files.length} files)</h3>`;
+
+            if (files.length === 0) {
+                html += '<p style="color: #00cc00;">No files in this queue.</p>';
+            } else {
+                html += '<table><tr><th>File Name</th><th>Size (bytes)</th><th>Last Modified</th></tr>';
+                for (const file of files) {
+                    const modDate = new Date(file.modified * 1000).toLocaleString();
+                    html += `<tr>`;
+                    html += `<td>${file.name}</td>`;
+                    html += `<td>${file.size}</td>`;
+                    html += `<td style="font-size: 11px;">${modDate}</td>`;
+                    html += `</tr>`;
+                }
+                html += '</table>';
+
+                html += `<div style="margin-top: 20px;">`;
+                html += `<button onclick="clearQueue('${queueName}', ${files.length})" style="background: #330000; border: 1px solid #ff0000; color: #ff0000; padding: 10px 20px; cursor: pointer;">Clear All ${files.length} Files</button>`;
+                html += `</div>`;
+            }
+
+            // Hide main view, show file view
+            document.getElementById('queues-main-view').style.display = 'none';
+            document.getElementById('queue-files-view').style.display = 'block';
+            document.getElementById('queue-files-view').innerHTML = html;
+        }
+
+        async function clearQueue(queueName, fileCount) {
+            if (!confirm(`Clear all ${fileCount} files from queue: ${queueName}?\n\nThis action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const r = await fetch('/api/queues/clear', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({queue: queueName})
+                });
+                const data = await r.json();
+
+                if (data.success) {
+                    alert(`✓ Cleared ${data.files_deleted} files from ${queueName} queue!`);
+                    loadQueuesModal();
+                } else {
+                    alert(`Error: ${data.error || 'Unknown error'}`);
+                }
+            } catch(e) {
+                alert(`Failed to clear queue: ${e.message}`);
+            }
+        }
+
+        async function loadRulesModal() {
+            const r = await fetch('/api/patterns/suggestions');
+            const d = await r.json();
+            const suggestions = d.suggestions || [];
+
+            let html = '';
+
+            if (suggestions.length === 0) {
+                html += '<div style="padding: 20px; text-align: center;">';
+                html += '<p style="color: #00cc00; font-size: 16px; margin-bottom: 10px;">No routing rules suggested yet.</p>';
+                html += '<p style="color: #00cc00;">Willow will automatically suggest rules as it learns your routing patterns.</p>';
+                html += '</div>';
+            } else {
+                html += '<p style="color: #00cc00; margin-bottom: 15px;">Willow has learned these routing patterns. Review and confirm or reject each suggestion:</p>';
+                html += '<table><tr><th>Rule</th><th>Confidence</th><th>Based On</th><th>Actions</th></tr>';
+                for (const s of suggestions) {
+                    const confColor = s.confidence >= 0.8 ? '#00ff00' : s.confidence >= 0.6 ? '#ffaa00' : '#ff8800';
+                    const confPercent = (s.confidence * 100).toFixed(0);
+
+                    const ruleData = btoa(JSON.stringify({type: s.pattern_type, value: s.pattern_value, dest: s.destination}));
+                    html += `<tr>`;
+                    html += `<td>${s.rule}</td>`;
+                    html += `<td style="color:${confColor}">${confPercent}%</td>`;
+                    html += `<td>${s.based_on}</td>`;
+                    html += `<td>`;
+                    html += `<button class="confirm-rule-btn" data-rule="${ruleData}" style="background: #003300; border: 1px solid #00ff00; color: #00ff00; padding: 5px 10px; cursor: pointer; margin-right: 5px;">Confirm</button>`;
+                    html += `<button class="reject-rule-btn" data-rule="${ruleData}" style="background: #330000; border: 1px solid #ff0000; color: #ff0000; padding: 5px 10px; cursor: pointer;">Reject</button>`;
+                    html += `</td>`;
+                    html += `</tr>`;
+                }
+                html += '</table>';
+            }
+
+            html += '<div style="margin-top: 20px; padding: 15px; background: #111; border: 1px solid #00ff00;">';
+            html += '<h3 style="margin-bottom: 10px;">About Routing Rules</h3>';
+            html += '<p style="color: #00cc00; margin-bottom: 5px;"><strong>Confirm:</strong> Make this an automatic rule. Files matching this pattern will be routed automatically.</p>';
+            html += '<p style="color: #00cc00; margin-bottom: 5px;"><strong>Reject:</strong> Remove this suggestion. Willow will not suggest this pattern again.</p>';
+            html += '<p style="color: #00cc00;"><strong>Confidence:</strong> Based on how consistently you have routed files this way in the past.</p>';
+            html += '</div>';
+
+            document.getElementById('modal-body').innerHTML = html;
+
+            // Attach event listeners to rule buttons
+            document.querySelectorAll('.confirm-rule-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const data = JSON.parse(atob(btn.dataset.rule));
+                    confirmRule(data.type, data.value, data.dest);
+                });
+            });
+            document.querySelectorAll('.reject-rule-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const data = JSON.parse(atob(btn.dataset.rule));
+                    rejectRule(data.type, data.value, data.dest);
+                });
+            });
+        }
+
+        async function confirmRule(patternType, patternValue, destination) {
+            if (!confirm(`Confirm routing rule?\n\nAll future files matching:\n  ${patternValue}\n\nWill be automatically routed to:\n  ${destination}\n\nYou can still override this manually when needed.`)) {
+                return;
+            }
+
+            try {
+                const r = await fetch('/api/patterns/confirm_rule', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        pattern_type: patternType,
+                        pattern_value: patternValue,
+                        destination: destination
+                    })
+                });
+                const data = await r.json();
+
+                if (data.success) {
+                    alert(`✓ Routing rule confirmed!\n\nFiles matching "${patternValue}" will now be automatically routed to "${destination}".`);
+                    loadRulesModal();
+                } else {
+                    alert(`Error: ${data.error || 'Unknown error'}`);
+                }
+            } catch(e) {
+                alert(`Failed to confirm rule: ${e.message}`);
+            }
+        }
+
+        async function rejectRule(patternType, patternValue, destination) {
+            if (!confirm(`Reject routing rule?\n\nThis will remove the suggestion:\n  ${patternValue} → ${destination}\n\nWillow will not suggest this pattern again.`)) {
+                return;
+            }
+
+            try {
+                const r = await fetch('/api/patterns/reject_rule', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        pattern_type: patternType,
+                        pattern_value: patternValue,
+                        destination: destination
+                    })
+                });
+                const data = await r.json();
+
+                if (data.success) {
+                    alert(`✓ Rule rejected and removed from suggestions.`);
+                    loadRulesModal();
+                } else {
+                    alert(`Error: ${data.error || 'Unknown error'}`);
+                }
+            } catch(e) {
+                alert(`Failed to reject rule: ${e.message}`);
+            }
+        }
+
+        async function loadPatternsModal() {
+            const r = await fetch('/api/patterns/stats');
+            const d = await r.json();
+
+            if (d.error) {
+                document.getElementById('modal-body').innerHTML = `<p style="color: #ff0000;">Error: ${d.error}</p>`;
+                return;
+            }
+
+            const total = d.total_routings || 0;
+            const byDest = d.by_destination || {};
+            const byType = d.by_file_type || {};
+            const anomalies = d.unresolved_anomalies || 0;
+            const days = d.period_days || 30;
+
+            let html = '';
+
+            // Summary stats
+            html += '<div style="margin-bottom: 20px; padding: 15px; background: #111; border: 1px solid #00ff00;">';
+            html += '<h3 style="margin-bottom: 10px;">Routing Statistics (Last ' + days + ' Days)</h3>';
+            html += '<p style="color: #00cc00; font-size: 14px; margin-bottom: 5px;">Total Routings: <span style="color: #00ff00; font-size: 16px;">' + total + '</span></p>';
+            if (anomalies > 0) {
+                html += '<p style="color: #ff8800;">Unresolved Anomalies: <span style="color: #ff0000; font-size: 16px;">' + anomalies + '</span></p>';
+            } else {
+                html += '<p style="color: #00cc00;">Unresolved Anomalies: <span style="color: #00ff00;">0</span></p>';
+            }
+            html += '</div>';
+
+            // By Destination
+            html += '<h3 style="margin: 20px 0 10px;">Top Destinations</h3>';
+            const destEntries = Object.entries(byDest).sort((a, b) => b[1] - a[1]);
+            if (destEntries.length > 0) {
+                const maxCount = destEntries[0][1];
+                html += '<table style="width: 100%;"><tr><th>Destination</th><th>Count</th><th>Distribution</th></tr>';
+                for (const [dest, count] of destEntries.slice(0, 10)) {
+                    const pct = total > 0 ? (count / total * 100).toFixed(1) : 0;
+                    const barWidth = maxCount > 0 ? (count / maxCount * 100) : 0;
+                    html += `<tr>`;
+                    html += `<td>${dest}</td>`;
+                    html += `<td>${count}</td>`;
+                    html += `<td><div style="background: #003300; width: 100%; height: 20px; border: 1px solid #00ff00;"><div style="background: #00ff00; width: ${barWidth}%; height: 100%;"></div></div> ${pct}%</td>`;
+                    html += `</tr>`;
+                }
+                html += '</table>';
+            } else {
+                html += '<p style="color: #00cc00;">No routing data available for this period.</p>';
+            }
+
+            // By File Type
+            html += '<h3 style="margin: 20px 0 10px;">Top File Types</h3>';
+            const typeEntries = Object.entries(byType).sort((a, b) => b[1] - a[1]);
+            if (typeEntries.length > 0) {
+                const maxTypeCount = typeEntries[0][1];
+                html += '<table style="width: 100%;"><tr><th>File Type</th><th>Count</th><th>Distribution</th></tr>';
+                for (const [type, count] of typeEntries.slice(0, 10)) {
+                    const pct = total > 0 ? (count / total * 100).toFixed(1) : 0;
+                    const barWidth = maxTypeCount > 0 ? (count / maxTypeCount * 100) : 0;
+                    const displayType = type || 'unknown';
+                    html += `<tr>`;
+                    html += `<td>${displayType}</td>`;
+                    html += `<td>${count}</td>`;
+                    html += `<td><div style="background: #003300; width: 100%; height: 20px; border: 1px solid #00ff00;"><div style="background: #00ff00; width: ${barWidth}%; height: 100%;"></div></div> ${pct}%</td>`;
+                    html += `</tr>`;
+                }
+                html += '</table>';
+            } else {
+                html += '<p style="color: #00cc00;">No file type data available for this period.</p>';
+            }
+
+            // Info box
+            html += '<div style="margin-top: 20px; padding: 15px; background: #111; border: 1px solid #00ff00;">';
+            html += '<h3 style="margin-bottom: 10px;">About Pattern Recognition</h3>';
+            html += '<p style="color: #00cc00; margin-bottom: 5px;">Willow automatically tracks your routing decisions and learns patterns over time.</p>';
+            html += '<p style="color: #00cc00; margin-bottom: 5px;">These statistics show where files are being routed and help identify trends.</p>';
+            html += '<p style="color: #00cc00;">Use the Rules modal to confirm suggested routing patterns.</p>';
+            html += '</div>';
+
+            document.getElementById('modal-body').innerHTML = html;
         }
 
         async function loadNodesModal() {
@@ -236,6 +581,54 @@
                 }
             } catch(e) {
                 alert(`Failed to create database: ${e.message}`);
+            }
+        }
+
+        async function unblacklistProvider(providerName) {
+            if (!confirm(`Unblacklist provider: ${providerName}?\n\nThis will mark it as healthy and allow it to receive requests again.`)) {
+                return;
+            }
+
+            try {
+                const r = await fetch('/api/health/providers/unblacklist', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({provider: providerName})
+                });
+                const data = await r.json();
+
+                if (data.success) {
+                    alert(`✓ ${providerName} unblacklisted!\n\nProvider is now marked as healthy and will be included in the rotation.`);
+                    loadProvidersModal();
+                } else {
+                    alert(`Error: ${data.error || 'Unknown error'}`);
+                }
+            } catch(e) {
+                alert(`Failed to unblacklist provider: ${e.message}`);
+            }
+        }
+
+        async function resetProviderHealth(providerName) {
+            if (!confirm(`Reset health counters for: ${providerName}?\n\nThis will:\n- Reset consecutive failures to 0\n- Mark as healthy\n- Clear blacklist status`)) {
+                return;
+            }
+
+            try {
+                const r = await fetch('/api/health/providers/reset', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({provider: providerName})
+                });
+                const data = await r.json();
+
+                if (data.success) {
+                    alert(`✓ ${providerName} health reset!\n\nAll counters cleared and provider marked as healthy.`);
+                    loadProvidersModal();
+                } else {
+                    alert(`Error: ${data.error || 'Unknown error'}`);
+                }
+            } catch(e) {
+                alert(`Failed to reset provider health: ${e.message}`);
             }
         }
 
