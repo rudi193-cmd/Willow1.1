@@ -129,6 +129,10 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_VISION_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 
+# Daily quota blacklist: skip Gemini Vision for remainder of day when quota exhausted
+# Format: {"GEMINI_API_KEY": "YYYY-MM-DD"}
+_vision_quota_blacklist: dict = {}
+
 # DRIVE SCOPES
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
@@ -438,7 +442,14 @@ def visual_cortex(filepath):
     api_key = os.environ.get("GEMINI_API_KEY", GEMINI_API_KEY)
     gemini_failed = False
 
-    if api_key:
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    # Skip Gemini entirely if daily quota was exhausted today
+    if api_key and _vision_quota_blacklist.get(api_key) == today:
+        logging.debug("VISION: Gemini daily quota blacklisted — using filename fallback")
+        gemini_failed = True
+
+    if api_key and not gemini_failed:
         try:
             with open(filepath, "rb") as img_file:
                 b64_image = base64.b64encode(img_file.read()).decode('utf-8')
@@ -466,7 +477,18 @@ def visual_cortex(filepath):
                     time.sleep(4)  # 4 seconds = 15 requests per minute max
                     return text
             elif response.status_code == 429:
-                logging.warning("VISION: Gemini quota exceeded — cascading to fleet")
+                # Distinguish daily quota exhaustion from RPM rate limit
+                try:
+                    err_body = response.json()
+                    err_msg = str(err_body).lower()
+                except Exception:
+                    err_msg = response.text.lower()
+
+                if any(kw in err_msg for kw in ("daily", "per day", "resource_exhausted", "quota exceeded")):
+                    logging.warning(f"VISION: Gemini DAILY quota exhausted — blacklisting for today ({today})")
+                    _vision_quota_blacklist[api_key] = today
+                else:
+                    logging.warning("VISION: Gemini RPM rate limited — will retry next cycle")
                 gemini_failed = True
             else:
                 logging.warning(f"VISION: Gemini returned {response.status_code}: {response.text[:200]}")
@@ -474,11 +496,12 @@ def visual_cortex(filepath):
         except Exception as e:
             logging.warning(f"VISION: Gemini error: {e}")
             gemini_failed = True
-    else:
+    elif not api_key:
         gemini_failed = True
 
-    # Fallback 1: Use llm_router with filename context (cascades through free fleet)
-    if gemini_failed:
+    # Fallback: filename context only (no fleet hammering when Gemini is daily-quota-out)
+    # Only use llm_router text fallback for RPM limits (not daily quota exhaustion)
+    if gemini_failed and _vision_quota_blacklist.get(api_key) != today:
         filename_hint = _filename_context(filepath)
         filename = os.path.basename(filepath)
         if filename_hint:
@@ -1022,7 +1045,7 @@ def refinery_cycle(drive_service, username):
         return
 
     # Cap per cycle to avoid rate-limit storms (process rest next cycle)
-    BATCH_SIZE = 20  # Reduced from 50 to work with round-robin provider rotation
+    BATCH_SIZE = 5  # Reduced from 20 — daily quota exhaustion protection
     total_pending = len(files)
     batch_size = min(BATCH_SIZE, total_pending)
 
