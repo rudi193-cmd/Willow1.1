@@ -158,25 +158,86 @@ except Exception as e:
 # =============================================================================
 # 1. ORGANIC CONTEXT (The Map)
 # =============================================================================
+_ROUTING_SCHEMA_PATH = os.path.join(EARTH_PATH, "data", "routing_folders.json")
+_routing_schema_cache = None
+
+
+def _load_routing_schema():
+    """Load canonical folder list from data/routing_folders.json."""
+    global _routing_schema_cache
+    try:
+        with open(_ROUTING_SCHEMA_PATH, "r", encoding="utf-8") as f:
+            _routing_schema_cache = json.load(f)
+    except Exception as e:
+        logging.warning(f"ROUTING: Could not load schema: {e}")
+        _routing_schema_cache = {"canonical": ["screenshots", "photos", "social",
+            "documents", "code", "data", "audio", "video", "narrative",
+            "specs", "governance", "binary", "archive"], "aliases": {}, "proposed": {}}
+    return _routing_schema_cache
+
+
+def _save_routing_schema(schema):
+    """Persist routing schema (for proposed folder updates)."""
+    try:
+        os.makedirs(os.path.dirname(_ROUTING_SCHEMA_PATH), exist_ok=True)
+        with open(_ROUTING_SCHEMA_PATH, "w", encoding="utf-8") as f:
+            json.dump(schema, f, indent=2)
+    except Exception as e:
+        logging.warning(f"ROUTING: Could not save schema: {e}")
+
+
+def _is_valid_slug(name: str) -> bool:
+    """Valid folder name: lowercase alphanumeric + hyphen/underscore, 2-30 chars."""
+    return bool(name and 2 <= len(name) <= 30 and
+                re.match(r'^[a-z0-9][a-z0-9_-]*$', name))
+
+
+def _resolve_folder(name: str, schema: dict) -> tuple:
+    """
+    Resolve LLM folder suggestion to canonical name.
+    Returns (resolved_name, is_canonical).
+    """
+    name = name.lower().strip().strip('/')
+    # Strip non-slug chars
+    name = re.sub(r'[^a-z0-9_-]', '', name)
+
+    if not _is_valid_slug(name):
+        return "archive", True
+
+    # Direct canonical match
+    if name in schema["canonical"]:
+        return name, True
+
+    # Alias match
+    if name in schema.get("aliases", {}):
+        return schema["aliases"][name], True
+
+    # Novel proposal — valid slug but not in canonical
+    return name, False
+
+
+def _stage_proposal(name: str, filename: str, schema: dict):
+    """Track novel folder proposals. Promote to canonical after 3 occurrences."""
+    proposed = schema.setdefault("proposed", {})
+    if name not in proposed:
+        proposed[name] = {"count": 0, "first_seen": datetime.now().strftime('%Y-%m-%d'),
+                          "examples": []}
+    proposed[name]["count"] += 1
+    if filename not in proposed[name]["examples"]:
+        proposed[name]["examples"].append(filename)
+    proposed[name]["examples"] = proposed[name]["examples"][-5:]  # keep last 5
+    _save_routing_schema(schema)
+    logging.info(f"ROUTING: Proposed folder '{name}' ({proposed[name]['count']} occurrences)")
+
+
 def get_organic_structure(username):
     """
-    Scans artifacts/{username}/ to build a map of existing categories.
-    Each user gets their own organic folder structure — LLMs build it
-    based on what the user drops in.
+    Returns the canonical folder list as the routing target.
+    No longer scans disk — uses routing_folders.json as the source of truth.
     """
-    user_path = user_artifacts_path(username)
-    os.makedirs(user_path, exist_ok=True)
-
-    structure = []
-    for item in os.listdir(user_path):
-        item_path = os.path.join(user_path, item)
-        if os.path.isdir(item_path) and item != "pending":
-            structure.append(f"/{item}")
-
-    if not structure:
-        return "No existing structure."
-
-    return "\n".join(sorted(structure))
+    schema = _load_routing_schema()
+    folders = sorted(schema["canonical"])
+    return "\n".join(f"/{f}" for f in folders)
 
 # =============================================================================
 # 2. GOOGLE DRIVE API (The Harvester)
@@ -1091,56 +1152,40 @@ def refinery_cycle(drive_service, username):
         if not context_content:
             continue
 
-        # --- ROUTING WITH ORGANIC CONTEXT ---
-        prompt = f"""You are the Janitor. File this document into the correct folder.
+        # --- ROUTING WITH CANONICAL CONTEXT ---
+        schema = _load_routing_schema()
+        prompt = f"""You are filing a document. Pick the best folder from the list below.
 
-EXISTING FOLDERS:
+CANONICAL FOLDERS:
 {organic_map}
 
 RULES:
-- Use an existing folder if it fits.
-- If new, use a short lowercase name (e.g. reddit, email, documents, photos, screenshots).
-- Output ONLY the folder name. One word. No slashes. No explanation.
+- You MUST pick from the list above if the file fits.
+- Only suggest a NEW folder name if nothing fits — use a short slug (e.g. "invoices", "3dmodels").
+- Output ONLY the folder name. One word or hyphenated. No explanation.
 
 FILE: {filename}
 CONTEXT: {context_content}
 
 FOLDER:"""
 
-        # Prefer Gemini for classification (better instruction-following than local Ollama)
         response = llm_router.ask(prompt, preferred_tier="free")
 
         if response and response.content:
-            lines = [l.strip().strip('/') for l in response.content.strip().split('\n') if l.strip()]
-            destination_folder = lines[0] if lines else "Unsorted"
-            destination_folder = ''.join(e for e in destination_folder if e.isalnum() or e in ['_', '-'])
-            if not destination_folder or len(destination_folder) > 30 or len(destination_folder) < 2:
-                destination_folder = "Unsorted"
-            destination_folder = destination_folder.lower()
+            raw = response.content.strip().split('\n')[0].strip().strip('/')
+            destination_folder, is_canonical = _resolve_folder(raw, schema)
 
-            # Normalize synonym folders to canonical names
-            FOLDER_ALIASES = {
-                "pdfs": "documents",
-                "pdf": "documents",
-                "docs": "documents",
-                "doc": "documents",
-                "files": "documents",
-                "file": "documents",
-                "spec": "specs",
-                "specification": "specs",
-                "technical": "specs",
-                "photo": "photos",
-                "images": "photos",
-                "image": "photos",
-                "screenshot": "screenshots",
-                "screencap": "screenshots",
-                "snap": "screenshots",
-            }
-            destination_folder = FOLDER_ALIASES.get(destination_folder, destination_folder)
-
-            logging.info(f"ROUTED [{username}]: {filename} -> {destination_folder} (via {response.provider})")
+            if not is_canonical:
+                # Novel proposal — stage it, route to _proposed/ for now
+                _stage_proposal(destination_folder, filename, schema)
+                dest_for_filing = os.path.join(user_artifacts_path(username), "_proposed", destination_folder)
+                os.makedirs(dest_for_filing, exist_ok=True)
+                logging.info(f"PROPOSED [{username}]: {filename} -> _proposed/{destination_folder} (via {response.provider})")
+                destination_folder = f"_proposed/{destination_folder}"
+            else:
+                logging.info(f"ROUTED [{username}]: {filename} -> {destination_folder} (via {response.provider})")
         else:
-            destination_folder = "Unsorted"
+            destination_folder = "archive"
 
         # --- GOVERNANCE & EXECUTION ---
         with storage.txn_lock():

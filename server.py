@@ -542,6 +542,67 @@ async def ingest(file: UploadFile = File(...)):
     return {"status": "ingested", "filename": file.filename, "hash": file_hash, "chars": len(text_for_ingest)}
 
 
+# --- Routing Schema Endpoints ---
+
+@app.get("/api/routing/schema")
+def routing_schema():
+    """Return canonical folders, aliases, and proposed folders."""
+    import json
+    schema_path = os.path.join(os.path.dirname(__file__), "data", "routing_folders.json")
+    try:
+        with open(schema_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/routing/promote")
+def routing_promote(folder: str):
+    """Promote a proposed folder to canonical."""
+    import json
+    schema_path = os.path.join(os.path.dirname(__file__), "data", "routing_folders.json")
+    try:
+        with open(schema_path, "r", encoding="utf-8") as f:
+            schema = json.load(f)
+        if folder in schema.get("proposed", {}):
+            schema["canonical"].append(folder)
+            schema["canonical"] = sorted(set(schema["canonical"]))
+            del schema["proposed"][folder]
+            with open(schema_path, "w", encoding="utf-8") as f:
+                json.dump(schema, f, indent=2)
+            return {"promoted": folder, "canonical": schema["canonical"]}
+        return {"error": f"'{folder}' not in proposed"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/routing/reject")
+def routing_reject(folder: str):
+    """Reject a proposed folder — route its contents to archive."""
+    import json
+    schema_path = os.path.join(os.path.dirname(__file__), "data", "routing_folders.json")
+    try:
+        with open(schema_path, "r", encoding="utf-8") as f:
+            schema = json.load(f)
+        if folder in schema.get("proposed", {}):
+            del schema["proposed"][folder]
+            with open(schema_path, "w", encoding="utf-8") as f:
+                json.dump(schema, f, indent=2)
+            # Move files from _proposed/{folder} to archive
+            proposed_path = os.path.join("artifacts", USERNAME, "_proposed", folder)
+            archive_path = os.path.join("artifacts", USERNAME, "archive")
+            if os.path.isdir(proposed_path):
+                import shutil
+                os.makedirs(archive_path, exist_ok=True)
+                for f in os.listdir(proposed_path):
+                    shutil.move(os.path.join(proposed_path, f), os.path.join(archive_path, f))
+                os.rmdir(proposed_path)
+            return {"rejected": folder}
+        return {"error": f"'{folder}' not in proposed"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 # --- Topology Endpoints ---
 
 @app.get("/api/topology/rings")
