@@ -12,8 +12,8 @@ from git import Repo, GitCommandError
 
 # Constants
 DEFAULT_INTERVAL = 300  # 5 minutes in seconds
-LOG_FILE = Path("core/safe_sync.log")
-SAFE_REPO_DEFAULT = Path("safe")  # Default SAFE repo location
+LOG_FILE = Path(__file__).parent.parent / "core" / "safe_sync.log"
+SAFE_REPO_DEFAULT = Path(__file__).parent.parent.parent / "SAFE"  # ../SAFE relative to Willow
 
 # Configure logging
 logging.basicConfig(
@@ -93,7 +93,8 @@ class SafeSyncDaemon:
     def sync(self) -> None:
         """Perform a full sync cycle."""
         try:
-            self.initialize_repo()
+            if self.repo is None:
+                self.initialize_repo()
             entries = self.query_new_continuity_entries()
             if not entries:
                 logger.info("No new entries to sync")
