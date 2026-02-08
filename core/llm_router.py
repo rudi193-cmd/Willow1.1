@@ -140,7 +140,7 @@ PROVIDERS = [
     ProviderConfig("Ollama", "PATH", "http://localhost:11434/api/generate", "llama3.2:latest", "free"),  # LOCAL FALLBACK
 
     # --- TIER 2: CHEAP (High Performance / Low Cost) ---
-    ProviderConfig("DeepSeek", "DEEPSEEK_API_KEY", "https://api.deepseek.com/chat/completions", "deepseek-chat", "cheap"),
+    # ProviderConfig("DeepSeek", "DEEPSEEK_API_KEY", "https://api.deepseek.com/chat/completions", "deepseek-chat", "cheap"),  # Disabled - requires deposit
     ProviderConfig("Mistral", "MISTRAL_API_KEY", "https://api.mistral.ai/v1/chat/completions", "mistral-small", "cheap"),
     ProviderConfig("Together.ai", "TOGETHER_API_KEY", "https://api.together.xyz/v1/chat/completions", "meta-llama/Llama-3-8b-chat-hf", "cheap"),
     ProviderConfig("OpenRouter", "OPENROUTER_API_KEY", "https://openrouter.ai/api/v1/chat/completions", "microsoft/wizardlm-2-8x22b", "cheap"),
