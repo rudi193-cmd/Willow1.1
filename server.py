@@ -1467,7 +1467,57 @@ if UI_DIST.exists():
     app.mount("/", StaticFiles(directory=str(UI_DIST)), name="static")
 
 
+# --- Hot Reload Endpoint ---
+
+@app.post("/api/reload")
+def reload_module(module: str):
+    """Hot-reload a core module without restarting the server.
+
+    Works for: llm_router, extraction, tts_router, knowledge, coherence,
+               topology, provider_health, patterns_provider, fleet_feedback
+    Does NOT affect route definitions (those need server restart).
+    """
+    import importlib
+    allowed = {
+        "llm_router", "extraction", "tts_router", "knowledge",
+        "coherence", "topology", "provider_health", "patterns_provider",
+        "fleet_feedback", "embeddings"
+    }
+    if module not in allowed:
+        return {"error": f"Module '{module}' not reloadable. Allowed: {sorted(allowed)}"}
+    try:
+        import core
+        mod = getattr(core, module, None)
+        if mod is None:
+            import importlib
+            mod = importlib.import_module(f"core.{module}")
+        importlib.reload(mod)
+        return {"reloaded": f"core.{module}", "status": "ok"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/reload/all")
+def reload_all():
+    """Hot-reload all core modules at once."""
+    import importlib
+    modules = [
+        "llm_router", "extraction", "tts_router", "knowledge",
+        "coherence", "topology", "provider_health", "patterns_provider",
+        "fleet_feedback"
+    ]
+    results = {}
+    for name in modules:
+        try:
+            mod = importlib.import_module(f"core.{name}")
+            importlib.reload(mod)
+            results[name] = "ok"
+        except Exception as e:
+            results[name] = f"error: {e}"
+    return {"reloaded": results}
+
+
 if __name__ == "__main__":
     import uvicorn
     print("Willow UI: http://127.0.0.1:8420")
-    uvicorn.run(app, host="0.0.0.0", port=8420, log_level="info")
+    uvicorn.run("server:app", host="0.0.0.0", port=8420, log_level="info")

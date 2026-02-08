@@ -45,7 +45,7 @@ echo       OK.
 
 :: ── 5. WEB SERVER (background, wait for ready) ────────
 echo [5/13] Server...
-start "WILLOW SERVER" /min python server.py
+start "WILLOW SERVER" /min python -m uvicorn server:app --host 0.0.0.0 --port 8420 --reload --log-level info
 echo       Waiting for :8420...
 set retries=0
 :wait_server
