@@ -94,7 +94,8 @@ def load_keys_from_json():
             "SAMBANOVA_API_KEY", "HUGGINGFACE_API_KEY", "DEEPSEEK_API_KEY",
             "MISTRAL_API_KEY", "TOGETHER_API_KEY", "OPENROUTER_API_KEY",
             "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "FIREWORKS_API_KEY",
-            "COHERE_API_KEY"
+            "COHERE_API_KEY", "BASETEN_API_KEY", "BASETEN_API_KEY_2",
+            "NOVITA_API_KEY", "NOVITA_API_KEY_2", "NOVITA_API_KEY_3",
         ]
         
         loaded_count = 0
@@ -129,7 +130,9 @@ class ProviderConfig:
 
 PROVIDERS = [
     # --- TIER 1: TRULY FREE (Cloud First, Local Fallback) ---
-    # ProviderConfig("Oracle OCI", "ORACLE_OCI", "", "cohere.command-r-16k", "free"),  # Disabled - auth issues
+    ProviderConfig("OCI Gemini Flash", "ORACLE_OCI", "https://inference.generativeai.us-phoenix-1.oci.oraclecloud.com", "ocid1.generativeaimodel.oc1.phx.amaaaaaask7dceyaftocxtdymuntmco34k6fosinafgzvp2ixctikldeb2mq", "free"),
+    ProviderConfig("OCI Gemini Flash Lite", "ORACLE_OCI", "https://inference.generativeai.us-phoenix-1.oci.oraclecloud.com", "ocid1.generativeaimodel.oc1.phx.amaaaaaask7dceyaou4wnsto3famucn5b4eq7qxowzsbtco5mv5uzf3j37za", "free"),
+    ProviderConfig("OCI Gemini Pro", "ORACLE_OCI", "https://inference.generativeai.us-phoenix-1.oci.oraclecloud.com", "ocid1.generativeaimodel.oc1.phx.amaaaaaask7dceyaaxukx6phswip5qkz4oeti6gg3mm4vbahum7bfjwzy3da", "free"),
     ProviderConfig("Groq", "GROQ_API_KEY", "https://api.groq.com/openai/v1/chat/completions", "llama-3.1-8b-instant", "free"),
     ProviderConfig("Cerebras", "CEREBRAS_API_KEY", "https://api.cerebras.ai/v1/chat/completions", "llama3.1-8b", "free"),
     ProviderConfig("Google Gemini", "GEMINI_API_KEY", "https://generativelanguage.googleapis.com/v1beta/models/", "gemini-2.5-flash", "free"),
@@ -138,6 +141,12 @@ PROVIDERS = [
     # ProviderConfig("Cohere", "COHERE_API_KEY", "https://api.cohere.ai/v1/chat", "command-r", "free"),  # Disabled - 401 auth error
     ProviderConfig("HuggingFace Inference", "HUGGINGFACE_API_KEY", "https://api-inference.huggingface.co/models/", "meta-llama/Meta-Llama-3-8B-Instruct", "free"),
     ProviderConfig("Ollama", "PATH", "http://localhost:11434/api/generate", "llama3.2:latest", "free"),  # LOCAL FALLBACK
+
+    ProviderConfig("Baseten", "BASETEN_API_KEY", "https://inference.baseten.co/v1/chat/completions", "moonshotai/Kimi-K2.5", "free"),
+    ProviderConfig("Baseten2", "BASETEN_API_KEY_2", "https://inference.baseten.co/v1/chat/completions", "moonshotai/Kimi-K2.5", "free"),
+    ProviderConfig("Novita", "NOVITA_API_KEY", "https://api.novita.ai/v3/openai/chat/completions", "meta-llama/llama-3.1-8b-instruct", "free"),
+    ProviderConfig("Novita2", "NOVITA_API_KEY_2", "https://api.novita.ai/v3/openai/chat/completions", "meta-llama/llama-3.1-8b-instruct", "free"),
+    ProviderConfig("Novita3", "NOVITA_API_KEY_3", "https://api.novita.ai/v3/openai/chat/completions", "meta-llama/llama-3.1-8b-instruct", "free"),
 
     # --- TIER 2: CHEAP (High Performance / Low Cost) ---
     # ProviderConfig("DeepSeek", "DEEPSEEK_API_KEY", "https://api.deepseek.com/chat/completions", "deepseek-chat", "cheap"),  # Disabled - requires deposit
@@ -166,6 +175,17 @@ def get_available_providers() -> Dict[str, List[ProviderConfig]]:
             try:
                 if requests.get("http://localhost:11434/api/tags", timeout=1).status_code == 200:
                     available[p.tier].append(p)
+            except:
+                pass
+        # Check OCI by checking config file
+        elif p.env_key == "ORACLE_OCI":
+            try:
+                creds_path = Path("credentials.json")
+                if creds_path.exists():
+                    with open(creds_path) as f:
+                        creds = json.load(f)
+                    if creds.get("ORACLE_OCI"):
+                        available[p.tier].append(p)
             except:
                 pass
         # Check cloud providers by API key
@@ -234,10 +254,41 @@ def ask(prompt: str, preferred_tier: str = "free", use_round_robin: bool = True)
     if not priority:
         return None
 
-    # Filter out blacklisted providers
+    # Get provider success rates from health database
     provider_names = [p.name for p in priority]
+    health_data = provider_health.get_all_health_status()
+
+    # Calculate success rates and filter bad providers
+    provider_scores = {}
+    for p in priority:
+        health = health_data.get(p.name)
+
+        if not health or health.total_requests == 0:
+            # No data yet - give benefit of doubt, neutral score
+            provider_scores[p.name] = 0.5
+        else:
+            success_rate = health.total_successes / health.total_requests
+
+            # Skip providers with catastrophic failure rates
+            if success_rate < 0.2 and health.total_requests > 10:
+                logging.warning(f"Skipping {p.name} - only {success_rate*100:.1f}% success rate")
+                continue
+
+            provider_scores[p.name] = success_rate
+
+    # Filter out blacklisted providers
     healthy_names = provider_health.get_healthy_providers(provider_names)
-    healthy_providers = [p for p in priority if p.name in healthy_names]
+    healthy_providers = [
+        p for p in priority
+        if p.name in healthy_names and p.name in provider_scores
+    ]
+
+    # Sort by success rate within tier
+    # Tier rank (free=0, cheap=1, paid=2) * 10 + (1 - success_rate)
+    # This keeps tier priority but sorts by success within tier
+    healthy_providers.sort(
+        key=lambda p: tier_rank.get(p.tier, 99) * 10 + (1 - provider_scores[p.name])
+    )
 
     # Separate Ollama (local) from cloud providers
     ollama_provider = None
@@ -263,60 +314,53 @@ def ask(prompt: str, preferred_tier: str = "free", use_round_robin: bool = True)
     for provider in healthy_providers:
         start_time = time.time()
         try:
-            # --- ORACLE OCI ADAPTER ---
-            if provider.name == "Oracle OCI":
+            # --- ORACLE OCI ADAPTER (GenericChatRequest for Google/xAI models) ---
+            if provider.name.startswith("OCI "):
                 try:
                     import oci
                     from oci.generative_ai_inference import GenerativeAiInferenceClient
-                    from oci.generative_ai_inference.models import CohereChatRequest, OnDemandServingMode, ChatDetails
+                    from oci.generative_ai_inference.models import (
+                        GenericChatRequest, OnDemandServingMode, ChatDetails,
+                        TextContent, UserMessage
+                    )
 
-                    # Load Oracle config from credentials.json
                     creds_path = Path("credentials.json")
                     with open(creds_path) as f:
                         creds = json.load(f)
 
                     oracle_config = creds.get("ORACLE_OCI", {})
                     compartment_id = oracle_config.get("compartment_id")
-                    endpoint = oracle_config.get("endpoint")
                     config_path = oracle_config.get("config_path", str(Path.home() / ".oci" / "config"))
 
-                    # Initialize OCI config and client
-                    config = oci.config.from_file(config_path)
-                    client = GenerativeAiInferenceClient(config=config, service_endpoint=endpoint)
+                    oci_config = oci.config.from_file(config_path)
+                    client = GenerativeAiInferenceClient(
+                        config=oci_config, service_endpoint=provider.base_url
+                    )
 
-                    # Create chat request with proper structure
-                    chat_details = ChatDetails(
+                    response = client.chat(ChatDetails(
                         compartment_id=compartment_id,
                         serving_mode=OnDemandServingMode(model_id=provider.model),
-                        chat_request=CohereChatRequest(
-                            message=enhanced_prompt,
-                            max_tokens=1024,
-                            temperature=0.7
+                        chat_request=GenericChatRequest(
+                            messages=[UserMessage(content=[TextContent(text=enhanced_prompt)])],
+                            max_tokens=1024
                         )
-                    )
-
-                    # Call Oracle OCI
-                    response = client.chat(chat_details)
+                    ))
 
                     response_time_ms = int((time.time() - start_time) * 1000)
-                    response_text = response.data.chat_response.text
+                    choice = response.data.chat_response.choices[0]
+                    if not choice.message or not choice.message.content:
+                        raise ValueError(f"Empty response (finish={choice.finish_reason})")
+                    response_text = choice.message.content[0].text
 
-                    # Health tracking
                     provider_health.record_success(provider.name, response_time_ms)
-
-                    # Performance tracking (task_type already computed at top of function)
                     patterns_provider.log_provider_performance(
-                        provider=provider.name,
-                        file_type='text',
-                        category=task_type,
-                        response_time_ms=response_time_ms,
-                        success=True
+                        provider=provider.name, file_type='text',
+                        category=task_type, response_time_ms=response_time_ms, success=True
                     )
-
                     return RouterResponse(response_text, provider.name, provider.tier)
                 except Exception as oci_err:
-                    provider_health.record_failure(provider.name, type(oci_err).__name__, str(oci_err))
-                    logging.warning(f"Oracle OCI failed: {oci_err} — trying next")
+                    provider_health.record_failure(provider.name, type(oci_err).__name__, str(oci_err)[:200])
+                    logging.warning(f"OCI {provider.name} failed: {oci_err} — trying next")
                     continue
 
             # --- OLLAMA ADAPTER ---
@@ -348,7 +392,8 @@ def ask(prompt: str, preferred_tier: str = "free", use_round_robin: bool = True)
                     continue
 
             # --- OPENAI-COMPATIBLE ADAPTER (Groq, DeepSeek, Cerebras, Fireworks, etc) ---
-            elif provider.name in ["Groq", "DeepSeek", "Cerebras", "SambaNova", "Together.ai", "OpenRouter", "OpenAI", "Fireworks", "Mistral"]:
+            elif provider.name in ["Groq", "DeepSeek", "Cerebras", "SambaNova", "Together.ai", "OpenRouter", "OpenAI", "Fireworks", "Mistral",
+                                    "Baseten", "Baseten2", "Novita", "Novita2", "Novita3"]:
                 headers = {"Authorization": f"Bearer {os.environ.get(provider.env_key)}"}
                 if provider.name == "OpenRouter":
                     headers["HTTP-Referer"] = "https://github.com/die-namic"
