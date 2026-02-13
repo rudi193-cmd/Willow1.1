@@ -231,10 +231,11 @@ To use a tool, respond with JSON:
 To complete the task, respond with JSON:
 {{
   "action": "complete",
-  "response": "Your final answer to the user"
+  "response": "Brief completion summary (10 words max - user sees tool outputs)"
 }}
 
 Rules:
+0. Keep completion responses SHORT (10 words or less) - user sees full tool results
 1. Break complex tasks into steps
 2. Always read files before editing them
 3. Use grep/glob to explore before making assumptions
