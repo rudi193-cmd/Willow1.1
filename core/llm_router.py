@@ -286,6 +286,7 @@ def ask(prompt: str, preferred_tier: str = "free", use_round_robin: bool = True)
     # Sort by success rate within tier
     # Tier rank (free=0, cheap=1, paid=2) * 10 + (1 - success_rate)
     # This keeps tier priority but sorts by success within tier
+    tier_rank = {"free": 0, "cheap": 1, "paid": 2}
     healthy_providers.sort(
         key=lambda p: tier_rank.get(p.tier, 99) * 10 + (1 - provider_scores[p.name])
     )
