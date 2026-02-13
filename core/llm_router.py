@@ -26,6 +26,12 @@ try:
 except ImportError:
     import provider_health
 
+# Import LiteLLM universal adapter for 100+ providers
+try:
+    from . import litellm_adapter
+except ImportError:
+    import litellm_adapter
+
 # Import performance tracking for learning optimal routing
 try:
     from . import patterns_provider
@@ -596,6 +602,43 @@ def ask(prompt: str, preferred_tier: str = "free", use_round_robin: bool = True)
                 else:
                     provider_health.record_failure(provider.name, str(resp.status_code), resp.text[:200])
                     logging.warning(f"Provider {provider.name} returned {resp.status_code} — trying next")
+                    continue
+
+            # --- LITELLM UNIVERSAL FALLBACK ---
+            # For any provider not explicitly handled above, try LiteLLM (100+ providers)
+            else:
+                logging.info(f"Using LiteLLM fallback for {provider.name}")
+                model_name = litellm_adapter.get_litellm_model_name(provider.name, provider.model)
+                api_key = os.environ.get(provider.env_key) if provider.env_key else None
+
+                response_text = litellm_adapter.litellm_fallback(
+                    provider_name=provider.name,
+                    model=model_name,
+                    prompt=enhanced_prompt,
+                    api_key=api_key,
+                    api_base=provider.base_url if provider.base_url else None
+                )
+
+                if response_text:
+                    response_time_ms = int((time.time() - start_time) * 1000)
+
+                    provider_health.record_success(provider.name, response_time_ms)
+
+                    # Performance tracking
+                    patterns_provider.log_provider_performance(
+                        provider=provider.name,
+                        file_type='text',
+                        category=task_type,
+                        response_time_ms=response_time_ms,
+                        success=True
+                    )
+
+                    # Log cost and return
+                    return _log_and_return(response_text, provider.name, provider.tier,
+                                          provider.model, enhanced_prompt, task_type)
+                else:
+                    provider_health.record_failure(provider.name, "litellm_failure", "LiteLLM returned None")
+                    logging.warning(f"LiteLLM fallback failed for {provider.name} — trying next")
                     continue
 
         except Exception as e:
