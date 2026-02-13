@@ -2107,3 +2107,58 @@ def compact_request():
         return jsonify({'task_id': task_id, 'result': 'acknowledged'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# Agent Delivery Routing (EVERYTHING goes through Willow)
+@app.route('/api/agents/deliver', methods=['POST'])
+def agent_deliver():
+    """Route agent deliveries through Willow to user Pickup folders."""
+    try:
+        data = request.get_json()
+        
+        # Validate
+        required = ['from', 'to', 'destination', 'items']
+        if not all(k in data for k in required):
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        from_agent = data['from']
+        to_user = data['to']
+        destination = data['destination']
+        items = data['items']
+        
+        # Log routing through Willow
+        logging.info(f"WILLOW_ROUTING | {from_agent} → {to_user}/{destination} | {len(items)} items")
+        
+        # Route each item
+        results = []
+        for item in items:
+            filename = item.get('filename')
+            content = item.get('content')
+            
+            if not filename or not content:
+                results.append({'filename': filename, 'status': 'ERROR', 'reason': 'missing data'})
+                continue
+            
+            # Route through Willow to destination
+            if destination == 'Pickup':
+                from local_api import send_to_pickup
+                success = send_to_pickup(filename, content, to_user)
+                results.append({
+                    'filename': filename,
+                    'status': 'DELIVERED' if success else 'FAILED'
+                })
+            else:
+                results.append({'filename': filename, 'status': 'ERROR', 'reason': 'unknown destination'})
+        
+        # Return receipt
+        return jsonify({
+            'from': from_agent,
+            'to': to_user,
+            'destination': destination,
+            'routed_by': 'willow',
+            'items': results,
+            'status': 'COMPLETE'
+        }), 200
+        
+    except Exception as e:
+        logging.error(f"WILLOW_ROUTING_ERROR | {e}")
+        return jsonify({'error': str(e)}), 500
