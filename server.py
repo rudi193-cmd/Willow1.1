@@ -1075,7 +1075,7 @@ def governance_diff(commit_id: str):
 
 @app.post("/api/governance/approve")
 async def governance_approve(request: Request):
-    """Approve (ratify) a pending commit. Moves .pending → .commit."""
+    """Approve (ratify) a pending commit. Moves .pending → .commit and routes through Willow."""
     try:
         body = await request.json()
         commit_id = body.get("commit_id")
@@ -1086,11 +1086,42 @@ async def governance_approve(request: Request):
         if not pending_file.exists():
             return {"error": "Commit not found"}
 
+        # Read commit content before moving
+        commit_content = pending_file.read_text(encoding='utf-8')
+
+        # Extract proposer from commit (look for "**Proposer:**" line)
+        proposer = "unknown"
+        for line in commit_content.split('\n'):
+            if line.startswith('**Proposer:**'):
+                proposer = line.split('**Proposer:**')[1].strip().split('(')[0].strip().lower()
+                break
+
         # Move to .commit
         approved_file = GOV_COMMITS_DIR / f"{commit_id}.commit"
         pending_file.rename(approved_file)
 
-        return {"success": True, "action": "approved", "commit_id": commit_id}
+        # Route through Willow to Kart (for application) and proposer (for notification)
+        try:
+            # Send full commit to Kart for application
+            local_api.send_to_pickup(
+                filename=f"GOVERNANCE_APPROVED_{commit_id}.md",
+                content=f"# Governance Commit Approved\n\n**Commit ID:** {commit_id}\n**Action:** Apply this commit\n\n---\n\n{commit_content}",
+                username="kart"
+            )
+
+            # Send notification to proposer
+            if proposer != "unknown":
+                local_api.send_to_pickup(
+                    filename=f"GOVERNANCE_APPROVED_{commit_id}.md",
+                    content=f"# Your Governance Proposal Was Approved!\n\n**Commit ID:** {commit_id}\n**Approved by:** Sean Campbell\n**Date:** {datetime.now().isoformat()}\n\nYour proposal has been approved and routed to Kart for implementation.\n\nΔΣ=42",
+                    username=proposer
+                )
+
+            return {"success": True, "action": "approved", "commit_id": commit_id, "routed_to": ["kart", proposer]}
+        except Exception as routing_error:
+            # Approval still succeeded even if routing failed
+            return {"success": True, "action": "approved", "commit_id": commit_id, "routing_error": str(routing_error)}
+
     except Exception as e:
         return {"error": str(e), "success": False}
 
