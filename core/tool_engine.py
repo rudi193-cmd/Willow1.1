@@ -635,7 +635,7 @@ def _tool_delegate_to_agent(target_agent: str, task: str, agent: str, username: 
         response = requests.post(
             "http://localhost:8420/api/agents/chat/" + target_agent,
             json={"message": task},
-            timeout=60
+            timeout=120
         )
 
         if response.status_code == 200:
@@ -672,7 +672,7 @@ def _tool_delegate_to_agent(target_agent: str, task: str, agent: str, username: 
     except requests.exceptions.Timeout:
         return {
             "success": False,
-            "error": f"Delegation to {target_agent} timed out after 60 seconds"
+            "error": f"Delegation to {target_agent} timed out after 120 seconds"
         }
     except Exception as e:
         return {
