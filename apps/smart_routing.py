@@ -125,14 +125,14 @@ def route_screenshot(
     # Import learning system
     import sys
     from pathlib import Path
-    sys.path.insert(0, str(Path(__file__).parent.parent / "core"))
-    from patterns import suggest_destinations_for, log_routing_decision
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from core import patterns
 
     classification = classify_screenshot(filename, ocr_text)
     file_type = Path(filename).suffix.lower() or ".jpg"
 
     # Check learned preferences FIRST
-    suggestion = suggest_destinations_for(
+    suggestion = patterns.suggest_destinations_for(
         file_type=file_type,
         content_summary=f"Screenshot: {classification['platform']}",
         default_destinations=classification["destinations"],
@@ -188,7 +188,7 @@ def route_screenshot(
             routed_to.append("kart-interface")
 
     # LOG THE DECISION
-    log_routing_decision(
+    patterns.log_routing_decision(
         filename=filename,
         file_type=file_type,
         content_summary=f"{classification['platform']} screenshot",
