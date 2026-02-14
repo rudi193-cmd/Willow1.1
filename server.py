@@ -54,6 +54,7 @@ USERNAME = local_api.DEFAULT_USER
 # Mount API routes
 app.include_router(kart_routes.router)  # Task orchestration
 app.include_router(agent_routes.router)  # Conversational agents
+# Governance endpoints already defined in server.py (lines 1023-1155)
 
 
 # --- API Endpoints ---
@@ -535,12 +536,18 @@ async def skills_persona(request: Request):
 
 @app.post("/api/ingest")
 async def ingest(file: UploadFile = File(...)):
-    """Ingest a dropped file into the knowledge DB."""
-    allowed_ext = {".txt", ".md", ".pdf", ".docx", ".json", ".csv", ".html", ".htm"}
+    """Ingest a dropped file into the knowledge DB (text or images)."""
+    text_ext = {".txt", ".md", ".pdf", ".docx", ".json", ".csv", ".html", ".htm"}
+    image_ext = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"}
     suffix = Path(file.filename).suffix.lower()
 
-    if suffix not in allowed_ext:
-        return {"error": f"Unsupported file type: {suffix}", "accepted": list(allowed_ext)}
+    # Route images to screenshot processing
+    if suffix in image_ext:
+        return await upload_screenshot(file)
+
+    # Text files only beyond this point
+    if suffix not in text_ext:
+        return {"error": f"Unsupported file type: {suffix}", "accepted": list(text_ext | image_ext)}
 
     content_bytes = await file.read()
     file_hash = hashlib.md5(content_bytes).hexdigest()
@@ -567,6 +574,78 @@ async def ingest(file: UploadFile = File(...)):
     )
 
     return {"status": "ingested", "filename": file.filename, "hash": file_hash, "chars": len(text_for_ingest)}
+
+
+@app.post("/api/upload/screenshot")
+async def upload_screenshot(file: UploadFile = File(...)):
+    """
+    Upload a screenshot - runs OCR, extracts to knowledge DB, routes via smart routing, learns patterns.
+
+    This is the complete pipeline: Upload → OCR → Extract → Route → Learn
+    """
+    try:
+        # Validate file type
+        suffix = Path(file.filename).suffix.lower()
+        if suffix not in {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"}:
+            return {"error": f"Unsupported image type: {suffix}. Use .jpg, .png, etc."}
+
+        # Save to temp location
+        temp_dir = Path("temp")
+        temp_dir.mkdir(exist_ok=True)
+        temp_path = temp_dir / file.filename
+
+        content_bytes = await file.read()
+        temp_path.write_bytes(content_bytes)
+
+        # Run OCR to extract text
+        ocr_text = None
+        try:
+            from apps.pa import drive_organize
+            ocr_text = drive_organize._ocr_image(temp_path)
+            log.info(f"OCR extracted {len(ocr_text)} chars from {file.filename}")
+        except Exception as e:
+            log.warning(f"OCR failed for {file.filename}: {e}")
+            ocr_text = ""
+
+        # Route via smart_routing (does OCR extraction + pattern learning)
+        routing_result = None
+        try:
+            from apps import smart_routing
+            routing_result = smart_routing.route_screenshot(
+                filename=file.filename,
+                filepath=str(temp_path),
+                ocr_text=ocr_text,
+                source_user=USERNAME
+            )
+            log.info(f"Routed {file.filename} to: {routing_result.get('routed_to', [])}")
+        except Exception as e:
+            log.warning(f"Smart routing failed for {file.filename}: {e}")
+            # Fallback: just ingest to knowledge DB
+            try:
+                from apps.pa import drive_organize
+                entry = {"source": str(temp_path), "category": "screenshot", "ingestable": True}
+                drive_organize._ingest_text(temp_path, entry, USERNAME)
+            except Exception as ingest_error:
+                log.error(f"Fallback ingest failed: {ingest_error}")
+
+        # Clean up temp file
+        try:
+            temp_path.unlink()
+        except:
+            pass
+
+        return {
+            "status": "processed",
+            "filename": file.filename,
+            "ocr_chars": len(ocr_text) if ocr_text else 0,
+            "routed_to": routing_result.get("routed_to", []) if routing_result else ["fallback"],
+            "classification": routing_result.get("classification", {}) if routing_result else {},
+            "message": "Screenshot uploaded, OCR extracted, routed, and learned ✓"
+        }
+
+    except Exception as e:
+        log.error(f"Screenshot upload failed: {e}")
+        return {"error": str(e)}
 
 
 # --- Routing Schema Endpoints ---

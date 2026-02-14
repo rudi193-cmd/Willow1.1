@@ -105,6 +105,10 @@
             <h2>⚖️ Governance</h2>
             <p id="governance-summary">Loading...</p>
         </div>
+        <div class="card" onclick="openModal('safe')">
+            <h2>🔒 SAFE Sync</h2>
+            <p id="safe-summary">Loading...</p>
+        </div>
         <div class="card" onclick="openModal('files')">
             <h2>📁 Files</h2>
             <p id="files-summary">Loading...</p>
@@ -176,13 +180,26 @@
 
             // Governance
             try {
-                const r = await fetch('/api/system/status');
-                const d = await r.json();
+                const [sysR, auditR] = await Promise.all([
+                    fetch('/api/system/status'),
+                    fetch('/api/governance/audit/head')
+                ]);
+                const d = await sysR.json();
+                const audit = await auditR.json();
                 const pending = d.governance?.pending_commits || 0;
-                const lastRat = d.governance?.last_ratification;
-                const status = pending > 0 ? `${pending} pending` : 'All clear';
+                const entries = audit.entry_count ?? '?';
+                const status = pending > 0 ? `${pending} pending · ${entries} audit entries` : `All clear · ${entries} audit entries`;
                 document.getElementById('governance-summary').textContent = status;
             } catch(e) { document.getElementById('governance-summary').textContent = 'Error'; }
+
+            // SAFE
+            try {
+                const r = await fetch('/api/safe/status');
+                const d = await r.json();
+                const ok = d.reachable ? '✓ reachable' : '✗ unreachable';
+                const sync = d.last_sync ? d.last_sync.split(' ').slice(-2).join(' ') : 'never';
+                document.getElementById('safe-summary').textContent = `${ok} · last: ${sync}`;
+            } catch(e) { document.getElementById('safe-summary').textContent = 'Error'; }
 
             // Files
             try {
@@ -208,6 +225,7 @@
                 else if (type === 'patterns') await loadPatternsModal();
                 else if (type === 'nodes') await loadNodesModal();
                 else if (type === 'governance') await loadGovernanceModal();
+                else if (type === 'safe') await loadSafeModal();
                 else if (type === 'learning') await loadLearningModal();
                 else if (type === 'files') await loadFilesModal();
                 else document.getElementById('modal-body').innerHTML = `<p>${type} modal coming soon...</p>`;
@@ -649,20 +667,80 @@
         }
 
         async function loadGovernanceModal() {
-            const r = await fetch('/api/system/status');
-            const d = await r.json();
+            const [sysR, headR, verifyR] = await Promise.all([
+                fetch('/api/system/status'),
+                fetch('/api/governance/audit/head'),
+                fetch('/api/governance/audit/verify'),
+            ]);
+            const d = await sysR.json();
             const gov = d.governance || {};
+            const head = await headR.json();
+            const verify = await verifyR.json();
+
+            const chainOk = verify.valid === true;
+            const chainColor = chainOk ? '#00ff00' : '#ff4444';
+            const chainLabel = chainOk ? '✓ Chain intact' : '✗ Chain broken';
 
             let html = '<div>';
             html += `<p><strong>Pending Commits:</strong> ${gov.pending_commits || 0}</p>`;
             if (gov.last_ratification) {
-                const date = new Date(gov.last_ratification).toLocaleString();
-                html += `<p><strong>Last Ratification:</strong> ${date}</p>`;
+                html += `<p><strong>Last Ratification:</strong> ${new Date(gov.last_ratification).toLocaleString()}</p>`;
+            }
+            html += `<hr style="border-color:#333;margin:12px 0">`;
+            html += `<p><strong>Audit Chain:</strong> <span style="color:${chainColor}">${chainLabel}</span></p>`;
+            html += `<p><strong>Entries:</strong> ${head.entry_count ?? '?'} &nbsp;|&nbsp; <strong>Sequence:</strong> ${head.sequence ?? '?'}</p>`;
+            if (head.head_hash) {
+                html += `<p style="font-size:11px;color:#555;word-break:break-all"><strong>Head:</strong> ${head.head_hash}</p>`;
+            }
+            if (!chainOk && verify.actual_head_computed) {
+                html += `<p style="color:#ff4444;font-size:11px">Expected: ${verify.expected_head}<br>Computed: ${verify.actual_head_computed}</p>`;
             }
             html += '<p style="margin-top: 20px;"><a href="/governance" target="_blank" style="color: #00ff00; text-decoration: underline;">Open Full Governance Dashboard →</a></p>';
             html += '</div>';
 
             document.getElementById('modal-body').innerHTML = html;
+        }
+
+        async function loadSafeModal() {
+            document.getElementById('modal-body').innerHTML = '<p>Loading...</p>';
+            const r = await fetch('/api/safe/status');
+            const d = await r.json();
+
+            const reachColor = d.reachable ? '#00ff00' : '#ff4444';
+            const reachLabel = d.reachable ? '✓ Reachable' : '✗ Unreachable';
+
+            let html = '<div>';
+            html += `<p><strong>SAFE Repo:</strong> <span style="color:${reachColor}">${reachLabel}</span></p>`;
+            html += `<p style="font-size:11px;color:#555">${d.repo_path || ''}</p>`;
+            if (d.last_sync) html += `<p><strong>Last Sync:</strong> ${d.last_sync}</p>`;
+            if (d.last_error) html += `<p style="color:#ff8800"><strong>Last Error:</strong> ${d.last_error}</p>`;
+
+            if (d.recent_log && d.recent_log.length) {
+                html += `<hr style="border-color:#333;margin:12px 0"><p><strong>Recent Log:</strong></p>`;
+                html += `<pre style="font-size:10px;color:#555;white-space:pre-wrap;max-height:150px;overflow-y:auto">${d.recent_log.join('\n')}</pre>`;
+            }
+
+            html += `<hr style="border-color:#333;margin:12px 0">`;
+            html += `<button onclick="triggerSafeSync()" style="background:#003300;border:1px solid #00ff00;color:#00ff00;padding:8px 16px;cursor:pointer;border-radius:4px">▶ Sync Now</button>`;
+            html += `<span id="safe-sync-status" style="margin-left:12px;font-size:12px;color:#888"></span>`;
+            html += '</div>';
+
+            document.getElementById('modal-body').innerHTML = html;
+        }
+
+        async function triggerSafeSync() {
+            document.getElementById('safe-sync-status').textContent = 'Running...';
+            try {
+                const r = await fetch('/api/safe/sync', {method: 'POST'});
+                const d = await r.json();
+                if (d.success) {
+                    document.getElementById('safe-sync-status').textContent = '✓ Done';
+                } else {
+                    document.getElementById('safe-sync-status').textContent = `✗ ${d.error || d.stderr || 'failed'}`;
+                }
+            } catch(e) {
+                document.getElementById('safe-sync-status').textContent = `✗ ${e.message}`;
+            }
         }
 
         async function loadLearningModal() {
@@ -1251,10 +1329,11 @@
                 'providers': '🌐 Provider Mesh Details',
                 'queues': '📥 Queue Management',
                 'nodes': '🌳 Node Health & Database Management',
-                'learning': '🧠 Learned Routing Patterns',
+                'learning': '🤖 LLM Fleet Feedback',
                 'rules': '💡 Suggested Routing Rules',
-                'patterns': '📊 Pattern Recognition Stats',
+                'patterns': '📂 File Routing Patterns',
                 'governance': '⚖️ Governance & Dual Commit',
+                'safe': '🔒 SAFE Sync Status',
                 'files': '📁 File Browser & Tagger'
             };
             return titles[type] || type;
