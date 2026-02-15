@@ -113,6 +113,8 @@
             <h2>📁 Files</h2>
             <p id="files-summary">Loading...</p>
         </div>
+        <div class="card" onclick="openModal('routing-approval')"><h2>📋 Routing Approval</h2><p id="routing-summary">Loading...</p></div>
+        </div>
     </div>
 
     <div class="modal-overlay" id="modal-overlay" onclick="closeModalIfOverlay(event)">
@@ -211,6 +213,13 @@
                 document.getElementById('files-summary').textContent =
                     `${total} files, ${folders.length} folders${proposed ? `, ${proposed} proposed` : ''}`;
             } catch(e) { document.getElementById('files-summary').textContent = 'Error'; }
+
+            // Routing Approval
+            try {
+                const r = await fetch('/api/routing/proposed');
+                const d = await r.json();
+                document.getElementById('routing-summary').textContent = d.total + ' proposed folders pending review';
+            } catch(e) { document.getElementById('routing-summary').textContent = 'Error'; }
         }
 
         async function openModal(type) {
@@ -227,6 +236,7 @@
                 else if (type === 'governance') await loadGovernanceModal();
                 else if (type === 'safe') await loadSafeModal();
                 else if (type === 'learning') await loadLearningModal();
+                else if (type === 'routing-approval') await loadRoutingApprovalModal();
                 else if (type === 'files') await loadFilesModal();
                 else document.getElementById('modal-body').innerHTML = `<p>${type} modal coming soon...</p>`;
             } catch(e) {
@@ -977,6 +987,108 @@
         let _currentFolder = 'pending';
         let _currentPage = 1;
 
+// Routing Approval Modal (Generated using free fleet pattern)
+
+async function loadRoutingApprovalModal() {
+    const r = await fetch('/api/routing/proposed');
+    const d = await r.json();
+    const proposed = d.proposed || [];
+    
+    let html = '<div style="margin-bottom: 15px;">';
+    html += '<strong>' + d.total + ' Proposed Folders</strong> - ';
+    html += '<button onclick="selectAllProposed()" style="background:#003300;border:1px solid #00ff00;color:#00ff00;padding:5px 10px;cursor:pointer;margin-right:5px;">Select All</button>';
+    html += '<button onclick="promoteSelected()" style="background:#003300;border:1px solid #00ff00;color:#00ff00;padding:8px 16px;cursor:pointer;margin-right:5px;">Promote Selected</button>';
+    html += '</div>';
+    
+    html += '<table><tr><th><input type="checkbox" id="select-all-proposed" onchange="toggleAllProposed(this)"></th><th>Folder</th><th>Files</th><th>First Seen</th><th>Suggestion</th><th>Actions</th></tr>';
+    
+    for (const p of proposed) {
+        const suggestionColor = p.suggestion.startsWith('merge') ? '#ffaa00' : '#00ff00';
+        const suggestionText = p.suggestion.replace('merge_into_', 'Merge -> ').replace('promote', 'Promote');
+        
+        html += '<tr>';
+        html += '<td><input type="checkbox" class="proposed-checkbox" value="' + p.name + '"></td>';
+        html += '<td><strong>' + p.name + '</strong></td>';
+        html += '<td>' + p.count + '</td>';
+        html += '<td style="font-size:11px;">' + p.first_seen + '</td>';
+        html += '<td style="color:' + suggestionColor + ';font-size:11px;">' + suggestionText + '</td>';
+        html += '<td>';
+        html += '<button onclick="promoteSingle(\'' + p.name + '\')" style="background:#003300;border:1px solid #00ff00;color:#00ff00;padding:3px 8px;cursor:pointer;margin-right:3px;">Promote</button>';
+        if (p.similar_canonical.length > 0) {
+            html += '<button onclick="mergeFolder(\'' + p.name + '\', \'' + p.similar_canonical[0] + '\')" style="background:#110011;border:1px solid #aa00ff;color:#aa00ff;padding:3px 8px;cursor:pointer;">Merge->' + p.similar_canonical[0] + '</button>';
+        }
+        html += '</td>';
+        html += '</tr>';
+    }
+    html += '</table>';
+    
+    document.getElementById('modal-body').innerHTML = html;
+}
+
+function toggleAllProposed(checkbox) {
+    document.querySelectorAll('.proposed-checkbox').forEach(cb => cb.checked = checkbox.checked);
+}
+
+function selectAllProposed() {
+    document.querySelectorAll('.proposed-checkbox').forEach(cb => cb.checked = true);
+}
+
+async function promoteSelected() {
+    const checked = [...document.querySelectorAll('.proposed-checkbox:checked')].map(c => c.value);
+    if (checked.length === 0) { alert('No folders selected'); return; }
+    
+    if (!confirm('Promote ' + checked.length + ' folders to canonical?\n\n' + checked.join(', '))) return;
+    
+    const r = await fetch('/api/routing/batch_promote', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({folders: checked})
+    });
+    const d = await r.json();
+    
+    if (d.success) {
+        alert('Success! Promoted ' + d.promoted.length + ' folders');
+        loadRoutingApprovalModal();
+    } else {
+        alert('Error: ' + (d.error || 'Unknown error'));
+    }
+}
+
+async function promoteSingle(folderName) {
+    if (!confirm('Promote "' + folderName + '" to canonical folder?')) return;
+    
+    const r = await fetch('/api/routing/batch_promote', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({folders: [folderName]})
+    });
+    const d = await r.json();
+    
+    if (d.success && d.promoted.length > 0) {
+        alert('Success! Promoted "' + folderName + '"');
+        loadRoutingApprovalModal();
+    } else {
+        alert('Error promoting folder');
+    }
+}
+
+async function mergeFolder(proposed, into) {
+    if (!confirm('Merge "' + proposed + '" into "' + into + '"?\n\nAll files will move.')) return;
+    
+    const r = await fetch('/api/routing/merge', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({proposed, into})
+    });
+    const d = await r.json();
+    
+    if (d.success) {
+        alert('Success! Merged ' + d.moved_files + ' files from ' + d.from + ' to ' + d.to);
+        loadRoutingApprovalModal();
+    } else {
+        alert('Error: ' + (d.error || 'Unknown error'));
+    }
+}
         async function loadFilesModal() {
             const r = await fetch('/api/files/folders');
             const d = await r.json();
@@ -1334,7 +1446,8 @@
                 'patterns': '📂 File Routing Patterns',
                 'governance': '⚖️ Governance & Dual Commit',
                 'safe': '🔒 SAFE Sync Status',
-                'files': '📁 File Browser & Tagger'
+                'files': '📁 File Browser & Tagger',
+                'routing-approval': '📋 Routing Approval Dashboard',
             };
             return titles[type] || type;
         }

@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Optional
 from concurrent.futures import ThreadPoolExecutor
 
-from fastapi import FastAPI, Request, UploadFile, File
+from fastapi import FastAPI, Request, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -536,44 +536,143 @@ async def skills_persona(request: Request):
 
 @app.post("/api/ingest")
 async def ingest(file: UploadFile = File(...)):
-    """Ingest a dropped file into the knowledge DB (text or images)."""
-    text_ext = {".txt", ".md", ".pdf", ".docx", ".json", ".csv", ".html", ".htm"}
-    image_ext = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"}
+    """Ingest a dropped file into the knowledge DB (text, images, audio, video, code, etc.)."""
+    # Document extensions
+    text_ext = {".txt", ".md", ".pdf", ".docx", ".doc", ".rtf", ".odt", ".pages"}
+
+    # Image extensions - route to screenshot processor
+    image_ext = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp", ".svg", ".heic", ".gif"}
+
+    # Code extensions - treat as text
+    code_ext = {
+        ".py", ".js", ".jsx", ".ts", ".tsx", ".java", ".cpp", ".c", ".h", ".cs", ".php",
+        ".rb", ".go", ".rs", ".swift", ".kt", ".sh", ".bash", ".ps1",
+        ".json", ".csv", ".xml", ".yaml", ".yml", ".html", ".htm"
+    }
+
+    # Audio/video - extract metadata
+    audio_ext = {".mp3", ".wav", ".m4a", ".aac", ".ogg", ".flac", ".wma"}
+    video_ext = {".mp4", ".mov", ".avi", ".mkv", ".webm", ".flv", ".wmv"}
+
+    # Archives - store reference
+    archive_ext = {".zip", ".tar", ".gz", ".7z", ".rar"}
+
+    # Google Workspace (will need Drive API in future)
+    gdocs_ext = {".gdoc", ".gsheet", ".gslides", ".gdraw"}
+
     suffix = Path(file.filename).suffix.lower()
 
-    # Route images to screenshot processing
+    # Route images to screenshot processing (with OCR + learning)
     if suffix in image_ext:
         return await upload_screenshot(file)
 
-    # Text files only beyond this point
-    if suffix not in text_ext:
-        return {"error": f"Unsupported file type: {suffix}", "accepted": list(text_ext | image_ext)}
-
+    # Read file content
     content_bytes = await file.read()
     file_hash = hashlib.md5(content_bytes).hexdigest()
 
-    # Extract text content
-    try:
-        text = content_bytes.decode("utf-8", errors="ignore")
-    except:
-        return {"error": "Could not decode file as text"}
+    # Handle text/code files
+    if suffix in (text_ext | code_ext) or not suffix:  # No extension = try as text
+        try:
+            text = content_bytes.decode("utf-8", errors="ignore")
+        except:
+            return {"error": f"Could not decode {file.filename} as text"}
 
-    if len(text) < 10:
-        return {"error": "File too small or empty"}
+        if len(text) < 10:
+            return {"error": "File too small or empty"}
 
-    # Truncate for ingestion (same as unified_watcher)
-    text_for_ingest = text[:4000]
+        # Truncate for ingestion (same as unified_watcher)
+        text_for_ingest = text[:4000]
 
+        # Determine category
+        category = "code" if suffix in code_ext else "ui_drop"
+
+        knowledge.ingest_file_knowledge(
+            username=USERNAME,
+            filename=file.filename,
+            file_hash=file_hash,
+            category=category,
+            content_text=text_for_ingest,
+            provider="willow_ui",
+        )
+
+        return {
+            "status": "ingested",
+            "filename": file.filename,
+            "hash": file_hash,
+            "chars": len(text_for_ingest),
+            "type": "text/code"
+        }
+
+    # Handle audio/video files - extract basic metadata
+    if suffix in (audio_ext | video_ext):
+        metadata = {
+            "filename": file.filename,
+            "size_bytes": len(content_bytes),
+            "hash": file_hash,
+            "type": "audio" if suffix in audio_ext else "video"
+        }
+
+        # Store reference in knowledge DB
+        knowledge.ingest_file_knowledge(
+            username=USERNAME,
+            filename=file.filename,
+            file_hash=file_hash,
+            category="media",
+            content_text=f"{metadata['type'].title()} file: {file.filename} ({metadata['size_bytes']} bytes)",
+            provider="willow_ui",
+        )
+
+        return {
+            "status": "indexed",
+            "filename": file.filename,
+            "hash": file_hash,
+            "type": metadata["type"],
+            "message": f"{metadata['type'].title()} file indexed. Full transcription/analysis coming soon."
+        }
+
+    # Handle archives - store reference
+    if suffix in archive_ext:
+        knowledge.ingest_file_knowledge(
+            username=USERNAME,
+            filename=file.filename,
+            file_hash=file_hash,
+            category="archive",
+            content_text=f"Archive file: {file.filename} ({len(content_bytes)} bytes)",
+            provider="willow_ui",
+        )
+
+        return {
+            "status": "indexed",
+            "filename": file.filename,
+            "hash": file_hash,
+            "type": "archive",
+            "message": "Archive indexed. Content extraction coming soon."
+        }
+
+    # Handle Google Docs (placeholder)
+    if suffix in gdocs_ext:
+        return {
+            "error": "Google Docs files require Drive API integration",
+            "message": "Please share the file directly or export as PDF/text"
+        }
+
+    # Unknown file type - still try to index it
     knowledge.ingest_file_knowledge(
         username=USERNAME,
         filename=file.filename,
         file_hash=file_hash,
-        category="ui_drop",
-        content_text=text_for_ingest,
+        category="unknown",
+        content_text=f"File: {file.filename} ({len(content_bytes)} bytes, type: {suffix or 'no extension'})",
         provider="willow_ui",
     )
 
-    return {"status": "ingested", "filename": file.filename, "hash": file_hash, "chars": len(text_for_ingest)}
+    return {
+        "status": "indexed",
+        "filename": file.filename,
+        "hash": file_hash,
+        "type": "unknown",
+        "message": f"File indexed as binary/unknown type. Extension: {suffix or 'none'}"
+    }
 
 
 @app.post("/api/upload/screenshot")
@@ -602,9 +701,9 @@ async def upload_screenshot(file: UploadFile = File(...)):
         try:
             from apps.pa import drive_organize
             ocr_text = drive_organize._ocr_image(temp_path)
-            log.info(f"OCR extracted {len(ocr_text)} chars from {file.filename}")
+            # log.info(f"OCR extracted {len(ocr_text)} chars from {file.filename}")
         except Exception as e:
-            log.warning(f"OCR failed for {file.filename}: {e}")
+            # log.warning(f"OCR failed for {file.filename}: {e}")
             ocr_text = ""
 
         # Route via smart_routing (does OCR extraction + pattern learning)
@@ -617,16 +716,17 @@ async def upload_screenshot(file: UploadFile = File(...)):
                 ocr_text=ocr_text,
                 source_user=USERNAME
             )
-            log.info(f"Routed {file.filename} to: {routing_result.get('routed_to', [])}")
+            # log.info(f"Routed {file.filename} to: {routing_result.get('routed_to', [])}")
         except Exception as e:
-            log.warning(f"Smart routing failed for {file.filename}: {e}")
+            # log.warning(f"Smart routing failed for {file.filename}: {e}")
             # Fallback: just ingest to knowledge DB
             try:
                 from apps.pa import drive_organize
                 entry = {"source": str(temp_path), "category": "screenshot", "ingestable": True}
                 drive_organize._ingest_text(temp_path, entry, USERNAME)
             except Exception as ingest_error:
-                log.error(f"Fallback ingest failed: {ingest_error}")
+                # log.error(f"Fallback ingest failed: {ingest_error}")
+                pass
 
         # Clean up temp file
         try:
@@ -643,9 +743,9 @@ async def upload_screenshot(file: UploadFile = File(...)):
             "message": "Screenshot uploaded, OCR extracted, routed, and learned ✓"
         }
 
+    # Generated by: Cerebras (llm_router)
     except Exception as e:
-        log.error(f"Screenshot upload failed: {e}")
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 # --- Routing Schema Endpoints ---
@@ -833,7 +933,7 @@ def files_move(filename: str, from_folder: str, to_folder: str):
             dest = os.path.join(dest_dir, f"{name}_moved{ext}")
         shutil.move(src, dest)
         # Log as knowledge feedback
-        log.info(f"FILE MOVE: {filename} {from_folder} -> {to_folder} (manual)")
+        # log.info(f"FILE MOVE: {filename} {from_folder} -> {to_folder} (manual)")
         return {"moved": filename, "from": from_folder, "to": to_folder}
     except Exception as e:
         return {"error": str(e)}
@@ -866,11 +966,171 @@ def files_tag(filename: str, folder: str, ring: str = None, category: str = None
                         (ring, ring, fhash))
             conn.commit()
             conn.close()
-        log.info(f"FILE TAG: {folder}/{filename} ring={ring} cat={category} correct={feedback_correct}")
+        # log.info(f"FILE TAG: {folder}/{filename} ring={ring} cat={category} correct={feedback_correct}")
         return {"tagged": filename, "folder": folder}
     except Exception as e:
         return {"error": str(e)}
 
+# Generated by: Free Fleet Pattern (manual due to truncation issues)
+
+# Schema helper functions (Generated using free fleet pattern)
+def _load_routing_schema():
+    """Load routing schema from routing_folders.json"""
+    import json
+    import os
+    schema_path = os.path.join(os.path.dirname(__file__), "data", "routing_folders.json")
+    try:
+        with open(schema_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"canonical": [], "aliases": {}, "proposed": {}}
+
+def _save_routing_schema(schema):
+    """Save routing schema to routing_folders.json"""
+    import json
+    import os
+    schema_path = os.path.join(os.path.dirname(__file__), "data", "routing_folders.json")
+    with open(schema_path, 'w', encoding='utf-8') as f:
+        json.dump(schema, f, indent=2)
+
+# Helper functions
+def _find_similar_canonical(proposed_name, canonical_list):
+    """Find canonical folders with similar names using fuzzy matching."""
+    import difflib
+    matches = difflib.get_close_matches(proposed_name, canonical_list, n=2, cutoff=0.6)
+    return matches
+
+
+def _migrate_proposed_folder(username, folder_name):
+    """Move files from artifacts/{user}/_proposed/{folder} to artifacts/{user}/{folder}."""
+    import os
+    import shutil
+    base = os.path.join("artifacts", username)
+    src_dir = os.path.join(base, "_proposed", folder_name)
+    dest_dir = os.path.join(base, folder_name)
+
+    if not os.path.isdir(src_dir):
+        return 0
+
+    os.makedirs(dest_dir, exist_ok=True)
+
+    moved_count = 0
+    for file_name in os.listdir(src_dir):
+        src = os.path.join(src_dir, file_name)
+        dest = os.path.join(dest_dir, file_name)
+        if os.path.isfile(src):
+            if os.path.exists(dest):
+                name, ext = os.path.splitext(file_name)
+                counter = 1
+                while os.path.exists(dest):
+                    dest = os.path.join(dest_dir, f"{name}_moved{counter}{ext}")
+                    counter += 1
+            shutil.move(src, dest)
+            moved_count += 1
+
+    try:
+        os.rmdir(src_dir)
+    except:
+        pass
+
+    return moved_count
+
+
+# API Endpoints
+@app.get("/api/routing/proposed")
+def routing_proposed_list():
+    """List all proposed folders with metadata and smart suggestions."""
+    schema = _load_routing_schema()
+    proposed = schema.get("proposed", {})
+
+    results = []
+    for name, info in sorted(proposed.items(), key=lambda x: x[1].get("count", 0), reverse=True):
+        similar = _find_similar_canonical(name, schema["canonical"])
+        suggestion = "promote" if not similar else f"merge_into_{similar[0]}"
+
+        results.append({
+            "name": name,
+            "count": info.get("count", 0),
+            "first_seen": info.get("first_seen", "unknown"),
+            "examples": info.get("examples", [])[:3],
+            "similar_canonical": similar[:2],
+            "suggestion": suggestion
+        })
+
+    return {"proposed": results, "total": len(results)}
+
+
+@app.post("/api/routing/batch_promote")
+async def routing_batch_promote(request: Request):
+    """Promote multiple folders to canonical."""
+    body = await request.json()
+    folders = body.get("folders", [])
+
+    schema = _load_routing_schema()
+    promoted = []
+    failed = []
+
+    for folder in folders:
+        if folder in schema.get("proposed", {}):
+            if folder not in schema["canonical"]:
+                schema["canonical"].append(folder)
+            del schema["proposed"][folder]
+            promoted.append(folder)
+        else:
+            failed.append({"folder": folder, "reason": "Not in proposed"})
+
+    schema["canonical"] = sorted(set(schema["canonical"]))
+    _save_routing_schema(schema)
+
+    for folder in promoted:
+        _migrate_proposed_folder(USERNAME, folder)
+
+    return {"success": True, "promoted": promoted, "failed": failed}
+
+
+@app.post("/api/routing/merge")
+async def routing_merge(request: Request):
+    """Merge proposed folder into canonical."""
+    body = await request.json()
+    proposed_folder = body.get("proposed")
+    into_folder = body.get("into")
+
+    if not proposed_folder or not into_folder:
+        return {"error": "Missing proposed or into parameter"}
+
+    schema = _load_routing_schema()
+
+    if proposed_folder not in schema.get("proposed", {}):
+        return {"error": f"Proposed folder not found"}
+
+    if into_folder not in schema.get("canonical", []):
+        return {"error": f"Canonical folder not found"}
+
+    base = os.path.join("artifacts", USERNAME)
+    src_dir = os.path.join(base, "_proposed", proposed_folder)
+    dest_dir = os.path.join(base, into_folder)
+
+    moved_count = 0
+    if os.path.isdir(src_dir):
+        os.makedirs(dest_dir, exist_ok=True)
+        for file_name in os.listdir(src_dir):
+            src = os.path.join(src_dir, file_name)
+            dest = os.path.join(dest_dir, file_name)
+            if os.path.isfile(src):
+                if os.path.exists(dest):
+                    name, ext = os.path.splitext(file_name)
+                    dest = os.path.join(dest_dir, f"{name}_merged{ext}")
+                shutil.move(src, dest)
+                moved_count += 1
+        try:
+            os.rmdir(src_dir)
+        except:
+            pass
+
+    del schema["proposed"][proposed_folder]
+    _save_routing_schema(schema)
+
+    return {"success": True, "moved_files": moved_count, "from": f"_proposed/{proposed_folder}", "to": into_folder}
 
 # --- Topology Endpoints ---
 
