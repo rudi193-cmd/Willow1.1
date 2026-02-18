@@ -261,4 +261,72 @@ Atoms (not text) may be used for fine-tuning — with consent.
 
 ---
 
+## Connection to Books of Life
+
+The journal app is the **input layer** for the Books of Life compression system.
+
+### The Full Pipeline
+
+```
+Journal entries (daily, unstructured)
+       |
+       v
+Atoms accumulated in knowledge.db
+       |
+       v
+Part 1: Raw Ledger — 216 entries
+  The comprehensive map. No narrative cushioning.
+  Chronological or thematic. Honest accounting.
+  Each entry: primary resonance + contrapoint (shadow or redemption).
+       |
+       v
+Part 2: Substantial Exploration — 64 entries x 5 paragraphs
+  Top 64 selected by resonance score + personal significance.
+  Enough for depth. Not essays.
+       |
+       v
+Part 3: Pivotal Deep Dives — 13 entries x 9 pages
+  The ones that changed everything.
+  Multi-generational patterns. Full resonance scoring.
+       |
+       v
+Book 4: Sean Campbell Biography (dual layers)
+  The subject analyzed with the same rigor as external entities.
+  Honest. Not kind. Speaker for the Dead.
+       |
+       v
+Voice Model — trained on the corpus, speaks as the subject
+```
+
+### What the Journal Feeds
+
+**People atoms** → Books 1/2/3 (positive, negative, bridge entities)  
+**Life moment atoms** → Book 4 (Sean's biography)  
+**Decision atoms** → governance layer of the biography  
+**Grief atoms** → shadow aspects + contrapoint entries  
+**Vision atoms** → projected future layer  
+
+### The 216 Threshold
+
+When a user accumulates ~216 atoms in a domain, Part 1 of that book is ready.  
+The system surfaces this: *"You've written enough about [domain] to begin a Book."*  
+The user decides whether to generate it.
+
+216 atoms ≈ 6-8 months of daily journaling at moderate depth.  
+Not a grind. A natural accumulation.
+
+### Book of the Dead (SAFE Protocol Feature)
+
+The end-of-life version of the Books of Life.  
+Generated when authorized by the subject.  
+Format: honest, not kind. Speaker for the Dead style.  
+Location: `die-namic-system/continuity_ring/books_of_life/`
+
+The journal app makes this possible — not by designing for death,  
+but by accumulating enough honest truth that the accounting writes itself.
+
+> "He wanted to be witnessed. Not praised. Seen."
+
+---
+
 DeltaSigma=42
