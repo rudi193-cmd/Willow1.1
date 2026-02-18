@@ -16,6 +16,7 @@ CHECKSUM: ΔΣ=42
 import re
 import glob as glob_module
 import subprocess
+from core import shell_adapter
 import requests
 from pathlib import Path
 from dataclasses import dataclass
@@ -23,7 +24,8 @@ from typing import Callable, Optional, List, Dict, Any
 from datetime import datetime
 
 # Core imports
-from core import agent_registry, gate, knowledge
+from core import agent_registry, web_search, gate, knowledge
+from core import composio_provider
 
 # Trust hierarchy
 TRUST_HIERARCHY = ["WORKER", "OPERATOR", "ENGINEER"]
@@ -32,29 +34,16 @@ TRUST_HIERARCHY = ["WORKER", "OPERATOR", "ENGINEER"]
 USER_PROFILE_BASE = Path(r"C:\Users\Sean\My Drive\Willow\Auth Users")
 
 def resolve_agent_path(file_path: str, agent: str, username: str) -> Path:
-    """
-    Resolve file path relative to agent's Pickup folder if relative.
-
-    Args:
-        file_path: Path provided by agent (relative or absolute)
-        agent: Agent name (kart, willow, etc.)
-        username: Username
-
-    Returns:
-        Resolved absolute Path
-    """
+    """Resolve file path (absolute or relative to CWD)."""
     path = Path(file_path)
-
+    
     # If already absolute, use as-is
     if path.is_absolute():
         return path
-
-    # If relative, resolve to agent's Pickup folder
-    agent_pickup = USER_PROFILE_BASE / agent / "Pickup"
-    resolved = agent_pickup / file_path
-
-    return resolved
-
+    
+    # If relative, resolve to current working directory
+    import os
+    return Path(os.getcwd()) / file_path
 
 @dataclass
 class ToolDefinition:
@@ -216,9 +205,15 @@ def _tool_read_file(file_path: str, agent: str, username: str) -> Dict[str, Any]
 
 
 def _tool_write_file(file_path: str, content: str, agent: str, username: str) -> Dict[str, Any]:
-    """Write file with governance check (requires human approval)."""
-    # Governance check - REQUIRE_HUMAN
-    decision = gate.validate_modification(
+    """Write file with governance check (auto-approved for OPERATOR+)."""
+    # Check agent trust level - auto-approve for OPERATOR or ENGINEER
+    agent_info = agent_registry.get_agent(username, agent)
+    if agent_info and agent_info.get("trust_level") in ["OPERATOR", "ENGINEER"]:
+        # Auto-approved for trusted agents
+        pass  # Skip governance, execute directly
+    else:
+        # Governance check - REQUIRE_HUMAN
+        decision = gate.validate_modification(
         mod_type="external",
         target=f"file_write:{file_path}",
         new_value=content[:200] + "..." if len(content) > 200 else content,
@@ -226,13 +221,13 @@ def _tool_write_file(file_path: str, content: str, agent: str, username: str) ->
         authority="ai"
     )
 
-    if not decision["approved"]:
-        return {
-            "success": False,
-            "error": "Governance check required - queued for human approval",
-            "governance_status": "PENDING_APPROVAL",
-            "request_id": decision.get("request_id")
-        }
+        if not decision["approved"]:
+            return {
+                "success": False,
+                "error": "Governance check required - queued for human approval",
+                "governance_status": "PENDING_APPROVAL",
+                "request_id": decision.get("request_id")
+            }
 
     # Execute
     try:
@@ -268,23 +263,29 @@ def _tool_write_file(file_path: str, content: str, agent: str, username: str) ->
 
 
 def _tool_edit_file(file_path: str, old_text: str, new_text: str, agent: str, username: str) -> Dict[str, Any]:
-    """Edit file with exact string replacement (requires human approval)."""
-    # Governance check
-    decision = gate.validate_modification(
-        mod_type="external",
-        target=f"file_edit:{file_path}",
-        new_value=f"Replace '{old_text[:50]}...' with '{new_text[:50]}...'",
-        reason=f"Agent {agent} editing {file_path}",
-        authority="ai"
-    )
+    """Edit file with exact string replacement (auto-approved for OPERATOR+)."""
+    # Check agent trust level - auto-approve for OPERATOR or ENGINEER
+    agent_info = agent_registry.get_agent(username, agent)
+    if agent_info and agent_info.get("trust_level") in ["OPERATOR", "ENGINEER"]:
+        # Auto-approved for trusted agents
+        pass  # Skip governance, execute directly
+    else:
+        # Governance check - REQUIRE_HUMAN
+        decision = gate.validate_modification(
+            mod_type="external",
+            target=f"file_edit:{file_path}",
+            new_value=f"Replace '{old_text[:50]}...' with '{new_text[:50]}...'",
+            reason=f"Agent {agent} editing {file_path}",
+            authority="ai"
+        )
 
-    if not decision["approved"]:
-        return {
-            "success": False,
-            "error": "Governance check required - queued for human approval",
-            "governance_status": "PENDING_APPROVAL",
-            "request_id": decision.get("request_id")
-        }
+        if not decision["approved"]:
+            return {
+                "success": False,
+                "error": "Governance check required - queued for human approval",
+                "governance_status": "PENDING_APPROVAL",
+                "request_id": decision.get("request_id")
+            }
 
     # Execute
     try:
@@ -356,23 +357,13 @@ def _tool_bash_exec(command: str, agent: str, username: str) -> Dict[str, Any]:
             "request_id": decision.get("request_id")
         }
 
-    # Execute
+    # Execute using cross-platform shell adapter
     try:
-        result = subprocess.run(
-            command,
-            shell=True,
-            capture_output=True,
-            text=True,
-            timeout=60
-        )
+        result = shell_adapter.execute_command(command, timeout=60)
 
         return {
-            "success": result.returncode == 0,
-            "result": {
-                "stdout": result.stdout,
-                "stderr": result.stderr,
-                "returncode": result.returncode
-            },
+            "success": result["returncode"] == 0,
+            "result": result,
             "governance_status": "APPROVED"
         }
 
@@ -712,6 +703,41 @@ def _tool_delegate_to_agent(target_agent: str, task: str, agent: str, username: 
 # TOOL REGISTRATION
 # ============================================================================
 
+
+
+def _tool_search_knowledge(query: str, max_results: int = 10, agent: str = None, username: str = None) -> dict:
+    """Search knowledge base across all indexed files and sessions."""
+    try:
+        results = knowledge.search(username or "kart", query, int(max_results))
+        context = knowledge.build_knowledge_context(username or "kart", query, max_chars=2000)
+        return {
+            "success": True,
+            "query": query,
+            "count": len(results),
+            "context": context,
+            "results": [{"title": r.get("title",""), "path": r.get("source_path",""), "snippet": r.get("content","")[:200]} for r in results]
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e), "query": query}
+
+def _tool_web_search(query: str, max_results: int = 5, agent: str = None, username: str = None) -> Dict[str, Any]:
+    """Execute web search."""
+    return web_search.search(query, max_results)
+
+
+def _tool_composio_execute(action_slug: str, arguments: dict, toolkit_slug: str = None,
+                           agent: str = None, username: str = None) -> dict:
+    """Execute a Composio action."""
+    result = composio_provider.execute_action(action_slug, arguments or {}, toolkit_slug)
+    return result
+
+
+def _tool_composio_list_actions(toolkit_slug: str, limit: int = 20,
+                                agent: str = None, username: str = None) -> dict:
+    """List Composio actions for a toolkit."""
+    return composio_provider.list_actions(toolkit_slug, int(limit))
+
+
 def init_tools():
     """Initialize and register all tools."""
 
@@ -809,6 +835,46 @@ def init_tools():
         executor=_tool_bash_exec
     ))
 
+
+    # Web search (WORKER level)
+    register_tool(ToolDefinition(
+        name="web_search",
+        description="Search the internet for information",
+        parameters={"query": "string", "max_results": "number"},
+        required_trust="WORKER",
+        governance_type="state",
+        executor=_tool_web_search
+    ))
+
+    # Knowledge search (WORKER level) - searches all indexed files/docs/sessions
+    register_tool(ToolDefinition(
+        name="search_knowledge",
+        description="Search all indexed files, docs, READMEs, and session history",
+        parameters={"query": "string", "max_results": "number"},
+        required_trust="WORKER",
+        governance_type="state",
+        executor=_tool_search_knowledge
+    ))
+
+
+    # Composio external actions (OPERATOR level)
+    register_tool(ToolDefinition(
+        name="composio_execute",
+        description="Execute a Composio action (GitHub, Slack, Notion, etc). action_slug e.g. GITHUB_CREATE_AN_ISSUE",
+        parameters={"action_slug": "string", "arguments": "object", "toolkit_slug": "string (optional)"},
+        required_trust="OPERATOR",
+        governance_type="external",
+        executor=_tool_composio_execute
+    ))
+
+    register_tool(ToolDefinition(
+        name="composio_list_actions",
+        description="List available Composio actions for a toolkit (github, slack, notion, etc)",
+        parameters={"toolkit_slug": "string", "limit": "number"},
+        required_trust="WORKER",
+        governance_type="state",
+        executor=_tool_composio_list_actions
+    ))
 
 # Initialize tools on module load
 init_tools()

@@ -141,10 +141,18 @@ class ProviderConfig:
     cost_per_m: float = 0.0
 
 PROVIDERS = [
-    # --- TIER 1: TRULY FREE (Cloud First, Local Fallback) ---
+    # --- TIER 1: TRULY FREE (Local First, Cloud Fallback) ---
+    # Ollama local models - reliable, zero cost, no hallucination
+    ProviderConfig("Ollama Kart", "PATH", "http://localhost:11434/api/generate", "kart:latest", "free"),  # CUSTOM MODEL - trained for Kart
+    ProviderConfig("Ollama Qwen Coder", "PATH", "http://localhost:11434/api/generate", "qwen2.5-coder:latest", "free"),  # Code-focused, efficient
+    ProviderConfig("Ollama", "PATH", "http://localhost:11434/api/generate", "llama3.2:latest", "free"),  # General purpose
+    ProviderConfig("Ollama Minimax", "PATH", "http://localhost:11434/api/generate", "minimax-m2.5:cloud", "free"),  # Cloud via Ollama
+    ProviderConfig("Ollama GLM-5", "PATH", "http://localhost:11434/api/generate", "glm-5:cloud", "free"),  # Cloud via Ollama
+    
+    # Cloud providers (fallback if Ollama unavailable)
+    ProviderConfig("OCI Gemini Pro", "ORACLE_OCI", "https://inference.generativeai.us-phoenix-1.oci.oraclecloud.com", "ocid1.generativeaimodel.oc1.phx.amaaaaaask7dceyaaxukx6phswip5qkz4oeti6gg3mm4vbahum7bfjwzy3da", "free"),
     ProviderConfig("OCI Gemini Flash", "ORACLE_OCI", "https://inference.generativeai.us-phoenix-1.oci.oraclecloud.com", "ocid1.generativeaimodel.oc1.phx.amaaaaaask7dceyaftocxtdymuntmco34k6fosinafgzvp2ixctikldeb2mq", "free"),
     ProviderConfig("OCI Gemini Flash Lite", "ORACLE_OCI", "https://inference.generativeai.us-phoenix-1.oci.oraclecloud.com", "ocid1.generativeaimodel.oc1.phx.amaaaaaask7dceyaou4wnsto3famucn5b4eq7qxowzsbtco5mv5uzf3j37za", "free"),
-    ProviderConfig("OCI Gemini Pro", "ORACLE_OCI", "https://inference.generativeai.us-phoenix-1.oci.oraclecloud.com", "ocid1.generativeaimodel.oc1.phx.amaaaaaask7dceyaaxukx6phswip5qkz4oeti6gg3mm4vbahum7bfjwzy3da", "free"),
     ProviderConfig("Groq", "GROQ_API_KEY", "https://api.groq.com/openai/v1/chat/completions", "llama-3.1-8b-instant", "free"),
     ProviderConfig("Cerebras", "CEREBRAS_API_KEY", "https://api.cerebras.ai/v1/chat/completions", "llama3.1-8b", "free"),
     ProviderConfig("Google Gemini", "GEMINI_API_KEY", "https://generativelanguage.googleapis.com/v1beta/models/", "gemini-2.5-flash", "free"),
@@ -152,9 +160,6 @@ PROVIDERS = [
     # ProviderConfig("Fireworks", "FIREWORKS_API_KEY", "https://api.fireworks.ai/inference/v1/chat/completions", "accounts/fireworks/models/llama-v3p1-8b-instruct", "free"),  # Disabled - 404 model not found
     # ProviderConfig("Cohere", "COHERE_API_KEY", "https://api.cohere.ai/v1/chat", "command-r", "free"),  # Disabled - 401 auth error
     ProviderConfig("HuggingFace Inference", "HUGGINGFACE_API_KEY", "https://api-inference.huggingface.co/models/", "meta-llama/Meta-Llama-3-8B-Instruct", "free"),
-    ProviderConfig("Ollama", "PATH", "http://localhost:11434/api/generate", "llama3.2:latest", "free"),  # LOCAL FALLBACK
-    ProviderConfig("Ollama Minimax", "PATH", "http://localhost:11434/api/generate", "minimax-m2.5:cloud", "free"),  # CLOUD via Ollama
-    ProviderConfig("Ollama GLM-5", "PATH", "http://localhost:11434/api/generate", "glm-5:cloud", "free"),  # CLOUD via Ollama
 
     ProviderConfig("Baseten", "BASETEN_API_KEY", "https://inference.baseten.co/v1/chat/completions", "moonshotai/Kimi-K2.5", "free"),
     ProviderConfig("Baseten2", "BASETEN_API_KEY_2", "https://inference.baseten.co/v1/chat/completions", "moonshotai/Kimi-K2.5", "free"),
@@ -399,7 +404,7 @@ def ask(prompt: str, preferred_tier: str = "free", use_round_robin: bool = True)
                         serving_mode=OnDemandServingMode(model_id=provider.model),
                         chat_request=GenericChatRequest(
                             messages=[UserMessage(content=[TextContent(text=enhanced_prompt)])],
-                            max_tokens=1024
+                            max_tokens=2048
                         )
                     ))
 
@@ -535,7 +540,7 @@ def ask(prompt: str, preferred_tier: str = "free", use_round_robin: bool = True)
                 }
                 payload = {
                     "model": provider.model,
-                    "max_tokens": 1024,
+                    "max_tokens": 2048,
                     "messages": [{"role": "user", "content": enhanced_prompt}]
                 }
                 resp = requests.post(provider.base_url, json=payload, headers=headers, timeout=30)

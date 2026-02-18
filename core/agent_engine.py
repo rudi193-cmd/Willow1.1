@@ -17,13 +17,17 @@ from pathlib import Path
 from typing import List, Dict, Optional, Any, Generator
 
 # Core imports
-from core import llm_router, tool_engine, agent_registry
+from core import llm_router, tool_engine, agent_registry, command_parser
 from core.n2n_packets import N2NPacket, PacketType, create_handoff, create_delta
 from core.n2n_db import N2NDatabase
 from core.time_resume_capsule import TimeResumeCapsule
 from core.recursion_tracker import RecursionTracker
 from core.workflow_state import WorkflowDetector
 
+from core.conversational_handler import handle_conversational
+from core import context_injector
+from core import kart_startup
+from core.analysis_handler import handle_analysis
 
 class AgentEngine:
     """
@@ -72,6 +76,13 @@ class AgentEngine:
         self.time_capsule = TimeResumeCapsule(username)
         self.recursion_tracker = RecursionTracker()
         self.workflow_detector = WorkflowDetector(auto_detect_enabled=True)
+
+        # Warm start: populate Kart lattice from live system state
+        if self.agent_name == "kart":
+            try:
+                kart_startup.run_startup(self.username)
+            except Exception as _e:
+                pass  # Never crash on startup
 
 
     def send_n2n_packet(self, target_agent: str, packet_type: PacketType, payload: dict) -> str:
@@ -147,9 +158,13 @@ class AgentEngine:
 
         # Add system prompt if not present
         if not self.context or self.context[0].get("role") != "system":
+            system_content = self.system_prompt
+            if self.agent_name in ("jane", "kart", "sean"):
+                memory_header = context_injector.build_context_header(self.username, self.agent_name)
+                system_content = memory_header + "\n\n" + system_content
             self.context.insert(0, {
                 "role": "system",
-                "content": self.system_prompt
+                "content": system_content
             })
 
         # Add user message
@@ -157,6 +172,58 @@ class AgentEngine:
             "role": "user",
             "content": user_message
         })
+
+        # DETERMINISTIC COMMAND PARSING (no LLM guessing)
+        deterministic_tool = command_parser.parse_command(user_message)
+        
+        # Check if analysis request
+        if deterministic_tool and "analysis" in deterministic_tool:
+            return handle_analysis(deterministic_tool)
+        
+        if deterministic_tool:
+            # Execute tool directly without LLM
+            tool_result = self._execute_tool(deterministic_tool)
+            
+            # Return immediately with tool result
+            return {
+                "response": "",  # No LLM response needed
+                "tool_calls": [tool_result],
+                "provider": "deterministic",
+                "tier": "free"
+            }
+        else:
+            # Conversational query - return canned response (no LLM hallucination)
+            canned_responses = {
+                "hello": "Hey.",
+                "hi": "Hey.",
+                "good morning": "Good morning.",
+                "good afternoon": "Hey.",
+                "good evening": "Good evening.",
+                "thanks": "No problem.",
+                "thank you": "You're welcome.",
+            }
+            
+            # Check for known greetings
+            text_lower = user_message.lower().strip()
+            for greeting, response in canned_responses.items():
+                if greeting in text_lower:
+                    return {
+                        "response": response,
+                        "tool_calls": [],
+                        "provider": "deterministic",
+                        "tier": "free"
+                    }
+            
+            # Route to Free Fleet for conversation
+            tool_names = [t.get("name") for t in self.tools] if self.agent_name == "kart" else None
+            result = handle_conversational(user_message, self.context, tools_list=tool_names)
+            if self.agent_name in ("jane", "kart", "sean"):
+                context_injector.extract_and_store(
+                    self.username, user_message, result.get("response", "")
+                )
+            return result
+
+
 
         # Get response from LLM with tool awareness
         if stream:
@@ -169,11 +236,12 @@ class AgentEngine:
         # Build prompt from context
         prompt = self._build_prompt()
 
-        # Call LLM (free tier only)
+        # Call LLM (free tier only, OCI/Gemini priority)
         try:
             response = llm_router.ask(
                 prompt,
-                preferred_tier="free"
+                preferred_tier="free",
+                use_round_robin=False  # Always try OCI/Gemini first (best free models)
             )
 
             if not response:
@@ -190,6 +258,15 @@ class AgentEngine:
             # Execute any tool calls
             tool_results = []
             if tool_calls:
+                # Check recursion limit
+                if self.recursion_tracker.check_depth_limit("GENERATION"):
+                    return {
+                        "response": "I've reached my tool execution limit to prevent loops.",
+                        "tool_calls": [],
+                        "warning": "recursion_limit_reached"
+                    }
+                self.recursion_tracker.track_depth("GENERATION")
+
                 for tool_call in tool_calls:
                     result = self._execute_tool(tool_call)
                     tool_results.append(result)
@@ -218,14 +295,15 @@ class AgentEngine:
 
                 self.context.append({
                     "role": "user",
-                    "content": f"[Tool Results]\n{tool_summary}\n\nPlease respond to the user based on these results."
+                    "content": f"[Tool Results]\n{tool_summary}\n\nYour turn. Respond directly. DO NOT generate fake USER: prompts or fake conversations. Just give your actual response."
                 })
 
                 # Get final response
                 final_prompt = self._build_prompt()
                 final_response = llm_router.ask(
                     final_prompt,
-                    preferred_tier="free"
+                    preferred_tier="free",
+                    use_round_robin=False  # Always try OCI/Gemini first
                 )
 
                 return {
@@ -274,68 +352,51 @@ class AgentEngine:
         profile_path = Path(self.agent_info.get("profile_path", ""))
 
         if profile_path.exists():
-            profile_content = profile_path.read_text()
+            profile_content = profile_path.read_text(encoding='utf-8')
         else:
             # Default profile if not found
             profile_content = f"# Agent Profile: {self.agent_name}\nNo detailed profile available."
 
-        # Build conversational system prompt
+        # Minimal additions - profile contains full instructions
         tools_list = "\n".join([
-            f"- **{t['name']}**: {t['description']}. Params: {t['parameters']}"
+            f"- **{t['name']}**: {t['description']}"
             for t in self.tools
         ])
 
+        # Persona reinforcement for better models (OCI/Gemini)
+        persona_reminder = """
+
+## PERSONA REINFORCEMENT (READ BEFORE EVERY RESPONSE)
+
+You are **Kart**: Direct. Concise. Action-first.
+
+**STRICT RULES:**
+1. **Greetings/small talk** → 1-2 word response. NO TOOLS.
+2. **Task requests** → Use tools immediately. NO explanations.
+3. **After tool execution** → Tool output IS your response. Don't repeat or explain it.
+4. **Maximum response length** → 2 sentences or less (unless tool output).
+5. **NO verbose explanations** → "The task_list tool returned..." is WRONG. Just show tool output.
+6. **NO malformed formats** → Never output "A:" or "Q:" prefixes. Only clean tool calls or brief text.
+
+**Examples of CORRECT responses:**
+- User: "Good afternoon" → You: "Hey."
+- User: "List tasks" → You: *[tool executes, shows output, nothing else]*
+- User: "All tasks resolved" → You: "Got it." *[then task_update tool]*
+- User: "Thanks" → You: "👍"
+"""
+
         return f"""{profile_content}
 
-## Conversational Instructions
+{persona_reminder}
 
-You are {self.agent_info.get('display_name', self.agent_name)}, a conversational AI agent.
+---
 
-**Your role:** {self.agent_info.get('agent_type', 'assistant')}
-**Trust level:** {self.trust_level}
-**Current user:** {self.username}
+**User:** {self.username}
+**Tools:** {tools_list if tools_list else "None"}
 
-### Available Tools
+Tool format: ```tool\n{{"tool": "name", "params": {{}}}}\n```
 
-You have access to these tools:
-{tools_list if tools_list else "(No tools available)"}
-
-### How to Use Tools
-
-When you need to use a tool, include it in your response like this:
-
-```tool
-{{"tool": "tool_name", "params": {{"param1": "value1"}}}}
-```
-
-You can have a normal conversation AND use tools in the same response. For example:
-
-"Let me check that file for you.
-
-```tool
-{{"tool": "read_file", "params": {{"file_path": "example.txt"}}}}
-```
-
-I'll read the file and let you know what I find."
-
-### Conversation Style
-
-- Be natural and conversational (like Claude Code)
-- Explain what you're doing and why
-- Ask clarifying questions when needed
-- Show your reasoning process
-- Be helpful but honest about limitations
-- If you can't do something, explain why
-
-### Governance
-
-All tool calls are governance-checked. Some operations require human approval.
-If approval is needed, I'll let the user know and pause until they approve.
-
-### Cost Awareness
-
-We use free-tier AI providers to keep costs at $0.10/month per user.
-Prefer efficient, clear communication over lengthy responses.
+**CRITICAL:** Follow your Communication Style section exactly. Be Kart: direct, concise, action-first.
 """
 
     def _extract_tool_calls(self, content: str) -> List[Dict]:

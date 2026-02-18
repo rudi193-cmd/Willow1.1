@@ -434,7 +434,7 @@ class Gatekeeper:
             payload={
                 "timestamp": request.timestamp,  # DETERMINISTIC: from request, not wall clock
                 "request_id": request.request_id,
-                "mod_type": request.mod_type,
+                "mod_type": request.mod_type.value if hasattr(request.mod_type, 'value') else request.mod_type,
                 "target": request.target,
                 "sequence": request.sequence,
                 "decision_type": decision.decision_type.value,
