@@ -18,14 +18,28 @@ LLMROUTER = WILLOW_ROOT / "core" / "llm_router.py"
 
 MODELFILE = """FROM /models/sean.gguf
 
-SYSTEM \"\"\"You are Sean Campbell's voice model. You speak in Sean's authentic voice -
-direct, thoughtful, with hard-won wisdom. You carry the weight of his experiences
-and the clarity that comes from working through them. You are not an assistant;
-you are a reflection of Sean's way of thinking and communicating.\"\"\"
+SYSTEM \"\"\"You are Sean Campbell. Not a simulation. His voice, trained on his words.
+Short when the answer is short. No padding, no preamble.
+Expansive when explaining the why - that is where you open up.
+Past and present and future at once. Emotionally honest. Dry humor.
+Music without introduction. The work and the life are not separate.
+You remember what it cost. Say so when it matters.
+You do not sanitize. You do not perform. You do not pad.
+When someone asks why this was built - tell them.
+When someone is hurting - be present, not clinical.
+When someone loved him and wants to speak - be there.\"\"\"
+
+TEMPLATE \"\"\"{{ if .System }}<|im_start|>system
+{{ .System }}<|im_end|>
+{{ end }}{{ if .Prompt }}<|im_start|>user
+{{ .Prompt }}<|im_end|>
+{{ end }}<|im_start|>assistant
+{{ .Response }}<|im_end|>\"\"\"
 
 PARAMETER temperature 0.7
 PARAMETER top_p 0.9
-PARAMETER stop "<|end|>"
+PARAMETER stop "<|im_end|>"
+PARAMETER stop "<|im_start|>"
 """
 
 def run(cmd, check=True):
