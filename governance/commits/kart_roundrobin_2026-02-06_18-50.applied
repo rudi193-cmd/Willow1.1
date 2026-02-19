@@ -1,0 +1,214 @@
+# Governance Proposal: Round-Robin Provider Rotation
+
+**Proposer:** Kart (Kartikeya)
+**Date:** 2026-02-06T18:50:00Z
+**Type:** Feature Enhancement
+**Trust Level:** ENGINEER (3)
+
+## Summary
+
+Implement round-robin rotation through LLM providers to avoid 429 rate limits and learn which provider is best for different task types. Instead of always trying providers in the same order, rotate through all available providers to distribute load evenly.
+
+## Proposed Changes
+
+**Files Modified:**
+1. `core/llm_router.py` - Add round-robin logic and performance tracking
+2. `core/patterns.py` - Add provider performance tracking to patterns.db
+3. `aios_loop.py` - Reduce batch size from 50 to 20, integrate performance logging
+
+## Rationale
+
+**Problem:**
+- Current cascade always tries Groq first
+- Processing 50 files = ~150 requests in 10 seconds
+- Groq free tier: 30 req/min → instant 429
+- Other 7 free providers sit idle
+
+**Solution:**
+- Rotate: File 1→Groq, File 2→Cerebras, File 3→Gemini, etc.
+- Spreads load across all providers
+- Avoids rate limits
+- Learns which provider is best at what
+
+**Benefits:**
+1. **No more 429s** - 8 providers × 30 req/min = 240 req/min capacity
+2. **Performance data** - Learn "Cerebras fast for code, Gemini good for summaries"
+3. **Smart routing** - Eventually route by task type + provider strength
+4. **Full utilization** - Use ALL available providers, not just first one
+
+## Risk Assessment
+
+- **Risk Level:** LOW
+- **Reversible:** YES - can revert to cascade-only behavior
+- **Dependencies:** None - pure addition
+- **Testing:** Will see immediate reduction in 429 errors
+
+## ΔE Impact
+
+Expected ΔE: +0.15 (new feature, performance tracking DB, routing intelligence)
+
+## Implementation Details
+
+### 1. Round-Robin State (llm_router.py)
+```python
+# Global state for round-robin
+_round_robin_state = {"last_index": 0}
+
+def ask(prompt: str, preferred_tier: str = "free",
+        use_round_robin: bool = True) -> Optional[RouterResponse]:
+    """
+    Route with round-robin rotation.
+
+    If use_round_robin=True:
+      - Rotate through providers in tier
+      - If one fails, try next in rotation
+      - Distributes load evenly
+
+    If use_round_robin=False:
+      - Original cascade behavior
+      - Try providers in order until one succeeds
+    """
+    available = get_available_providers()
+
+    if use_round_robin and preferred_tier in available:
+        providers = available[preferred_tier]
+        if providers:
+            # Start from next provider in rotation
+            start_idx = _round_robin_state["last_index"] % len(providers)
+
+            for offset in range(len(providers)):
+                idx = (start_idx + offset) % len(providers)
+                provider = providers[idx]
+
+                start_time = time.time()
+                result = _try_provider(provider, prompt)
+                elapsed_ms = int((time.time() - start_time) * 1000)
+
+                if result:
+                    _round_robin_state["last_index"] = (idx + 1) % len(providers)
+                    return result, {"provider": provider.name, "time_ms": elapsed_ms}
+
+    # Fallback to original cascade
+    # ... existing logic
+```
+
+### 2. Performance Tracking (patterns.py)
+```python
+def log_provider_performance(username: str, provider: str, file_type: str,
+                            category: str, response_time_ms: int,
+                            success: bool):
+    """Log provider performance for learning."""
+    conn = _connect(username)
+    conn.execute("""
+        INSERT INTO provider_performance
+        (provider, file_type, category, response_time_ms, success, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (provider, file_type, category, response_time_ms, success,
+          datetime.now().isoformat()))
+    conn.commit()
+
+def get_best_provider_for(username: str, file_type: str = None,
+                         category: str = None) -> Optional[str]:
+    """Get best performing provider for a task type."""
+    conn = _connect(username)
+
+    query = """
+        SELECT provider,
+               AVG(response_time_ms) as avg_time,
+               SUM(CASE WHEN success THEN 1 ELSE 0 END) * 1.0 / COUNT(*) as success_rate,
+               COUNT(*) as sample_size
+        FROM provider_performance
+        WHERE 1=1
+    """
+    params = []
+
+    if file_type:
+        query += " AND file_type = ?"
+        params.append(file_type)
+    if category:
+        query += " AND category = ?"
+        params.append(category)
+
+    query += """
+        GROUP BY provider
+        HAVING sample_size >= 10
+        ORDER BY success_rate DESC, avg_time ASC
+        LIMIT 1
+    """
+
+    result = conn.execute(query, params).fetchone()
+    return result[0] if result else None
+```
+
+### 3. Integration (aios_loop.py)
+```python
+# Reduce batch size
+BATCH_SIZE = 20  # Was 50
+
+# When calling LLM
+start_time = time.time()
+response = llm_router.ask(prompt, preferred_tier="free", use_round_robin=True)
+elapsed_ms = int((time.time() - start_time) * 1000)
+
+if response:
+    # Log performance
+    patterns.log_provider_performance(
+        username=username,
+        provider=response.provider,
+        file_type=ext,
+        category=category,
+        response_time_ms=elapsed_ms,
+        success=True
+    )
+```
+
+### 4. New patterns.db Schema
+```sql
+CREATE TABLE IF NOT EXISTS provider_performance (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    provider TEXT NOT NULL,
+    file_type TEXT,
+    category TEXT,
+    response_time_ms INTEGER,
+    success BOOLEAN,
+    timestamp TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_provider_perf ON provider_performance(provider, file_type, category);
+```
+
+## Expected Behavior
+
+**Before (Cascade):**
+```
+File 1: Groq (success)
+File 2: Groq (success)
+File 3: Groq (success)
+...
+File 31: Groq (429) → Cerebras (success)
+File 32: Groq (429) → Cerebras (success)
+```
+
+**After (Round-Robin):**
+```
+File 1: Groq (success)
+File 2: Cerebras (success)
+File 3: Gemini (success)
+File 4: SambaNova (success)
+File 5: Fireworks (success)
+File 6: Cohere (success)
+File 7: HuggingFace (success)
+File 8: Ollama (success)
+File 9: Groq (success)  ← Back to start, 60s elapsed
+```
+
+**Result:** No 429s, all providers utilized, performance data collected.
+
+---
+
+**Awaiting Human Ratification**
+
+User command: "implement" (direct approval)
+
+ΔΣ=42

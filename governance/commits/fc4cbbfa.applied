@@ -1,0 +1,58 @@
+# Governance Proposal: Fix Kart Truncation - Increase max_tokens
+
+**Proposer:** Claude Code (claude-code)
+**Date:** 2026-02-16T03:30:00Z
+**Type:** Bug Fix
+**Trust Level:** ENGINEER (3)
+
+## Summary
+Kart's responses truncate mid-sentence due to hardcoded 1024 max_tokens limit in llm_router.py. Increase to 2048 tokens for conversational agents to complete responses.
+
+## Proposed Changes
+**File:** core/llm_router.py
+**Lines:** 402, 538
+
+## Rationale
+- Kart truncates every other message (user-reported)
+- 1024 tokens = ~750 words, insufficient for complex explanations
+- Conversational agents need longer responses for tool orchestration
+- Free tier providers support 2048+ tokens
+- Cost impact: $0.00 (still free tier)
+
+## Risk Assessment
+- **Risk Level:** MINIMAL
+- **Reversible:** YES - revert to 1024 if issues
+- **Dependencies:** None
+- **Testing:** Kart conversation after change
+
+## ΔE Impact
+Expected ΔE: +0.08 (fixes critical UX issue, enables proper agent responses)
+
+## Implementation
+```diff
+--- a/core/llm_router.py
++++ b/core/llm_router.py
+@@ -399,7 +399,7 @@ def call_anthropic(prompt, model=None):
+                     messages=Messages(
+                         chat_request=GenericChatRequest(
+                             messages=[UserMessage(content=[TextContent(text=enhanced_prompt)])],
+-                            max_tokens=1024
++                            max_tokens=2048
+                         )
+                     ))
+                 response_content = result.content[0].text
+@@ -535,7 +535,7 @@ def call_cerebras(prompt, model="llama3.1-8b"):
+             else:
+                 payload = {
+                     "model": provider.model,
+-                    "max_tokens": 1024,
++                    "max_tokens": 2048,
+                     "messages": [{"role": "user", "content": enhanced_prompt}]
+                 }
+```
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42

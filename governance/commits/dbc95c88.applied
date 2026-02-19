@@ -1,0 +1,91 @@
+# Governance Proposal: Fix Kart Tool Format Hallucination
+
+**Proposer:** Claude Code (claude-code)
+**Date:** 2026-02-16T04:10:00Z
+**Type:** Bug Fix - Critical
+**Trust Level:** ENGINEER (3)
+
+## Summary
+Kart hallucinates tool execution instead of using real tools. Free-tier LLMs generate wrong format despite correct prompt. Strengthen tool format instructions and add validation.
+
+## Problem
+**Current behavior:** Kart outputs `{"tool_code": "kart.bash_exec(...)"}` instead of proper ````tool` blocks
+**Result:** No actual execution, hallucinated output, user confusion
+
+## Proposed Changes
+**File:** core/agent_engine.py
+**Lines:** 305-320 (tool instruction prompt)
+
+## Rationale
+- Free tier models (Gemini Flash, Cerebras) not following subtle instructions
+- Need explicit examples of WRONG formats to avoid
+- Add stronger emphasis on required JSON structure
+- Critical bug: Kart appears to work but does nothing
+
+## Risk Assessment
+- **Risk Level:** MINIMAL (prompt change only)
+- **Reversible:** YES
+- **Dependencies:** None
+- **Testing:** Test bash_exec with Kart after change
+
+## ΔE Impact
+Expected ΔE: +0.25 (fixes critical functionality bug)
+
+## Implementation
+```diff
+--- a/core/agent_engine.py
++++ b/core/agent_engine.py
+@@ -303,17 +303,36 @@ You have access to these tools:
+ 
+ ### How to Use Tools
+ 
+-When you need to use a tool, include it in your response like this:
++CRITICAL: When you need to use a tool, you MUST use this EXACT format:
+ 
+ ```tool
+ {"tool": "tool_name", "params": {"param1": "value1"}}
+ ```
+ 
+-You can have a normal conversation AND use tools in the same response. For example:
++WRONG formats (DO NOT USE):
++- {"tool_code": "kart.bash_exec(...)"}  ❌
++- print(kart.tool_name(...))  ❌
++- [🔧 tool_name]  ❌
++- Any Python-style function calls  ❌
++
++CORRECT example with bash_exec:
++
++"Let me create that file for you.
++
++```tool
++{"tool": "bash_exec", "params": {"command": "echo 'test' > file.txt"}}
++```
++
++I've executed the command to create the file."
++
++IMPORTANT RULES:
++1. Always use ```tool code blocks with JSON inside
++2. Never use Python function syntax like tool_name()
++3. Wait for real tool results before responding
++4. Don't hallucinate tool output - you'll get the real output after execution
+ 
+-"Let me check that file for you.
++You can have normal conversation AND use tools in the same response.
+ 
+-```tool
+-{"tool": "read_file", "params": {"file_path": "example.txt"}}
+-```
+-
+-I'll read the file and let you know what I find."
++When you use a tool:
++1. Explain what you're doing
++2. Use the tool with correct JSON format
++3. Tool results will be provided to you
++4. Then respond based on the REAL results
+```
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42

@@ -1,0 +1,1295 @@
+2026-02-07 20:06:12,918 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-07 20:06:18,525 - topology_builder - ERROR - build_edges failed: database is locked
+2026-02-07 20:06:29,084 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-07 20:06:29,085 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-07 20:06:29,697 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-07 20:06:29,727 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-07 20:06:29,811 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-07 20:06:29,848 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-07 20:06:29,927 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-07 20:06:29,967 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-07 20:06:30,059 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-02-07 20:06:30,091 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+2026-02-07 20:06:30,175 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-07 20:06:30,227 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-07 20:06:30,301 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-07 20:06:30,332 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-02-07 20:06:30,412 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-02-07 20:06:30,413 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-07 20:06:30,524 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-07 20:06:30,557 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-07 20:06:30,872 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-07 20:06:30,911 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-07 20:06:30,992 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-07 20:06:31,038 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-02-07 20:06:31,156 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-02-07 20:06:31,258 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-02-07 20:06:31,449 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-07 20:06:31,486 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-02-07 20:06:31,576 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-02-07 20:06:31,580 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-07 20:06:34,369 - topology_builder - INFO - Created 15 clusters
+2026-02-07 20:06:34,385 - topology_builder - INFO - Clusters created: 15
+2026-02-07 21:06:45,676 - topology_builder - ERROR - build_edges failed: database disk image is malformed
+2026-02-07 21:06:51,306 - topology_builder - ERROR - cluster_atoms failed: database is locked
+2026-02-07 22:06:56,884 - topology_builder - ERROR - build_edges failed: database is locked
+2026-02-07 22:07:02,463 - topology_builder - ERROR - cluster_atoms failed: database is locked
+2026-02-07 23:07:08,121 - topology_builder - ERROR - build_edges failed: database is locked
+2026-02-07 23:07:13,712 - topology_builder - ERROR - cluster_atoms failed: database is locked
+2026-02-08 13:22:01,727 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-08 13:22:14,459 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-08 13:22:14,459 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-08 13:22:15,083 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 13:22:15,117 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-08 13:22:15,197 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 13:22:15,225 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-08 13:22:15,310 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 13:22:15,393 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-08 13:22:15,479 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 13:22:15,522 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+2026-02-08 13:22:15,627 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 13:22:15,631 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-08 13:22:15,676 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-08 13:22:15,766 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 13:22:15,844 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-02-08 13:22:15,971 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-02-08 13:22:16,077 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 13:22:16,119 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-08 13:22:16,543 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 13:22:16,575 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-08 13:22:16,668 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 13:22:16,699 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-02-08 13:22:16,825 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-02-08 13:22:16,928 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-02-08 13:22:17,189 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 13:22:17,219 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-02-08 13:22:17,308 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-02-08 13:22:17,314 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-08 13:22:23,180 - topology_builder - ERROR - build_edges failed: database is locked
+2026-02-08 13:22:28,730 - topology_builder - ERROR - cluster_atoms failed: database is locked
+2026-02-08 14:23:48,448 - topology_builder - INFO - Built 23875 edges for 200 atoms
+2026-02-08 14:23:48,455 - topology_builder - INFO - Edges built: 23875
+2026-02-08 14:23:54,047 - topology_builder - ERROR - cluster_atoms failed: database is locked
+2026-02-08 15:25:19,097 - topology_builder - INFO - Built 30753 edges for 200 atoms
+2026-02-08 15:25:19,101 - topology_builder - INFO - Edges built: 30753
+2026-02-08 15:25:23,457 - topology_builder - INFO - Created 15 clusters
+2026-02-08 15:25:23,484 - topology_builder - INFO - Clusters created: 15
+2026-02-08 16:27:22,825 - topology_builder - INFO - Built 34011 edges for 200 atoms
+2026-02-08 16:27:22,828 - topology_builder - INFO - Edges built: 34011
+2026-02-08 16:27:25,226 - topology_builder - INFO - Created 15 clusters
+2026-02-08 16:27:25,266 - topology_builder - INFO - Clusters created: 15
+2026-02-08 17:29:04,111 - topology_builder - INFO - Built 31624 edges for 200 atoms
+2026-02-08 17:29:04,113 - topology_builder - INFO - Edges built: 31624
+2026-02-08 17:29:06,578 - topology_builder - INFO - Created 15 clusters
+2026-02-08 17:29:06,628 - topology_builder - INFO - Clusters created: 15
+2026-02-08 18:32:46,663 - topology_builder - INFO - Built 21050 edges for 200 atoms
+2026-02-08 18:32:46,666 - topology_builder - INFO - Edges built: 21050
+2026-02-08 18:32:52,347 - topology_builder - INFO - Created 15 clusters
+2026-02-08 18:32:52,392 - topology_builder - INFO - Clusters created: 15
+2026-02-08 19:35:41,688 - topology_builder - INFO - Built 26380 edges for 200 atoms
+2026-02-08 19:35:41,691 - topology_builder - INFO - Edges built: 26380
+2026-02-08 19:35:45,923 - topology_builder - INFO - Created 15 clusters
+2026-02-08 19:35:45,971 - topology_builder - INFO - Clusters created: 15
+2026-02-08 20:39:22,952 - topology_builder - INFO - Built 33644 edges for 200 atoms
+2026-02-08 20:39:22,954 - topology_builder - INFO - Edges built: 33644
+2026-02-08 20:39:28,325 - topology_builder - INFO - Created 15 clusters
+2026-02-08 20:39:28,367 - topology_builder - INFO - Clusters created: 15
+2026-02-08 21:35:47,703 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-08 21:36:08,995 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-08 21:36:08,996 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-08 21:36:09,753 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 21:36:09,804 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-08 21:36:09,883 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 21:36:09,922 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-08 21:36:10,004 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 21:36:10,031 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-08 21:36:10,123 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 21:36:10,163 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+2026-02-08 21:36:10,246 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 21:36:10,288 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-08 21:36:10,401 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 21:36:10,442 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-02-08 21:36:10,528 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-02-08 21:36:10,610 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 21:36:10,642 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-08 21:36:11,367 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 21:36:11,418 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-08 21:36:11,509 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 21:36:11,544 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-02-08 21:36:11,651 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-02-08 21:36:11,753 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-02-08 21:36:11,948 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 21:36:11,984 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-02-08 21:36:12,078 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-02-08 21:36:12,089 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-08 21:39:27,144 - topology_builder - INFO - Built 25274 edges for 200 atoms
+2026-02-08 21:39:27,149 - topology_builder - INFO - Edges built: 25274
+2026-02-08 21:39:34,114 - topology_builder - INFO - Created 15 clusters
+2026-02-08 21:39:34,172 - topology_builder - INFO - Clusters created: 15
+2026-02-08 22:30:04,728 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-08 22:30:57,016 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-08 22:30:57,016 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-08 22:30:57,840 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 22:30:57,846 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-08 22:30:57,899 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-08 22:30:57,994 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 22:30:58,043 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-08 22:30:58,150 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 22:30:58,239 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-08 22:30:58,323 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 22:30:58,386 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+2026-02-08 22:30:58,513 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 22:30:58,552 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-08 22:30:58,662 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 22:30:58,714 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-02-08 22:30:58,811 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-02-08 22:30:58,896 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 22:30:58,932 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-08 22:31:02,420 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 22:31:02,460 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-08 22:31:02,553 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 22:31:02,613 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-02-08 22:31:02,728 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-02-08 22:31:02,831 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-02-08 22:31:03,083 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-08 22:31:03,148 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-02-08 22:31:03,246 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-02-08 22:31:03,257 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-08 22:34:57,646 - topology_builder - INFO - Built 24293 edges for 200 atoms
+2026-02-08 22:34:57,651 - topology_builder - INFO - Edges built: 24293
+2026-02-08 22:35:03,778 - topology_builder - INFO - Created 15 clusters
+2026-02-08 22:35:03,825 - topology_builder - INFO - Clusters created: 15
+2026-02-08 23:35:03,833 - topology_builder - ERROR - build_edges failed: database disk image is malformed
+2026-02-08 23:35:03,836 - topology_builder - ERROR - cluster_atoms failed: database disk image is malformed
+2026-02-09 00:35:03,845 - topology_builder - ERROR - build_edges failed: database disk image is malformed
+2026-02-09 00:35:09,409 - topology_builder - WARNING - cluster_atoms attempt 1 failed (DB locked), retrying in 5s...
+2026-02-09 00:35:19,983 - topology_builder - WARNING - cluster_atoms attempt 2 failed (DB locked), retrying in 10s...
+2026-02-09 00:35:35,559 - topology_builder - ERROR - cluster_atoms failed: database is locked
+2026-02-09 00:46:06,425 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-09 00:46:06,434 - topology_builder - ERROR - build_edges failed: database disk image is malformed
+2026-02-09 00:46:20,244 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-09 00:46:20,244 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-09 00:46:20,830 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:46:20,874 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-09 00:46:20,964 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:46:21,031 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-09 00:46:21,115 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:46:21,161 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-09 00:46:21,245 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:46:21,273 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+2026-02-09 00:46:21,357 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:46:21,388 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-09 00:46:21,476 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:46:21,513 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-02-09 00:46:21,598 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-02-09 00:46:21,678 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:46:21,713 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-09 00:46:22,000 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:46:22,035 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-09 00:46:22,116 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:46:22,148 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-02-09 00:46:22,231 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-02-09 00:46:22,459 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-02-09 00:46:22,638 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:46:22,674 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-02-09 00:46:22,770 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-02-09 00:46:22,776 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-09 00:46:22,785 - topology_builder - ERROR - cluster_atoms failed: database disk image is malformed
+2026-02-09 00:55:43,844 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-09 00:55:43,850 - topology_builder - ERROR - build_edges failed: database disk image is malformed
+2026-02-09 00:55:52,948 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-09 00:55:52,949 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-09 00:55:53,513 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:55:53,548 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-09 00:55:53,635 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:55:53,666 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-09 00:55:53,743 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:55:53,744 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-09 00:55:53,787 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-09 00:55:53,871 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:55:53,901 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+2026-02-09 00:55:53,995 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:55:54,026 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-09 00:55:54,101 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:55:54,147 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-02-09 00:55:54,231 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-02-09 00:55:54,311 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:55:54,345 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-09 00:55:54,614 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:55:54,651 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-09 00:55:54,732 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:55:54,766 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-02-09 00:55:54,852 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-02-09 00:55:54,933 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-02-09 00:55:55,116 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 00:55:55,150 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-02-09 00:55:55,237 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-02-09 00:55:55,243 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-09 00:55:55,250 - topology_builder - ERROR - cluster_atoms failed: database disk image is malformed
+2026-02-09 00:59:51,718 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-09 00:59:51,732 - topology_builder - ERROR - build_edges failed: no such table: knowledge
+2026-02-09 01:00:00,057 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-09 01:00:00,057 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-09 01:00:00,692 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:00:00,730 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-09 01:00:00,815 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:00:00,853 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-09 01:00:00,928 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:00:01,003 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-09 01:00:01,089 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:00:01,137 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+2026-02-09 01:00:01,223 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:00:01,267 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-09 01:00:01,355 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:00:01,393 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-02-09 01:00:01,467 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-02-09 01:00:01,556 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:00:01,602 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-09 01:00:01,886 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:00:01,935 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-09 01:00:02,019 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:00:02,061 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-02-09 01:00:02,164 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-02-09 01:00:02,267 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-02-09 01:00:02,463 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:00:02,497 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-02-09 01:00:02,582 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-02-09 01:00:02,588 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-09 01:00:02,594 - topology_builder - ERROR - cluster_atoms failed: no such table: knowledge
+2026-02-09 01:05:01,490 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-09 01:05:01,497 - topology_builder - ERROR - build_edges failed: no such table: knowledge
+2026-02-09 01:05:09,605 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-09 01:05:39,957 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-09 01:05:40,571 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:05:40,601 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-09 01:05:40,686 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:05:40,687 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-09 01:05:40,719 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-09 01:05:40,810 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:05:40,859 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-09 01:05:40,940 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:05:40,987 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+2026-02-09 01:05:41,063 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:05:41,098 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-09 01:05:41,186 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:05:41,218 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-02-09 01:05:41,306 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-02-09 01:05:41,392 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:05:41,442 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-09 01:05:41,725 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:05:41,769 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-09 01:05:41,863 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:05:41,899 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-02-09 01:05:41,985 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-02-09 01:05:42,065 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-02-09 01:05:42,243 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:05:42,306 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-02-09 01:05:42,389 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-02-09 01:05:42,393 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-09 01:05:42,399 - topology_builder - ERROR - cluster_atoms failed: no such table: knowledge
+2026-02-09 01:07:10,053 - topology_builder - INFO - KNOWLEDGE: Empty DB detected. Bootstrapping schema...
+2026-02-09 01:07:10,076 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-09 01:07:10,083 - topology_builder - INFO - Edges built: 0
+2026-02-09 01:07:18,489 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-09 01:07:18,489 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-09 01:07:19,123 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:07:19,159 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-09 01:07:19,242 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:07:19,243 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-09 01:07:19,281 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-09 01:07:19,360 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:07:19,394 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-09 01:07:19,485 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:07:19,535 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+2026-02-09 01:07:19,620 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:07:19,660 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-09 01:07:19,741 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:07:19,775 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-02-09 01:07:19,866 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-02-09 01:07:19,965 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:07:19,994 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-09 01:07:20,302 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:07:20,355 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-09 01:07:20,438 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:07:20,474 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-02-09 01:07:20,562 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-02-09 01:07:20,640 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-02-09 01:07:20,802 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:07:20,836 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-02-09 01:07:20,924 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-02-09 01:07:20,929 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-09 01:07:20,937 - topology_builder - INFO - Clusters created: 0
+2026-02-09 01:10:18,368 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-09 01:10:18,375 - topology_builder - INFO - Edges built: 0
+2026-02-09 01:10:26,705 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-09 01:10:26,705 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-09 01:10:27,471 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:10:27,506 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-09 01:10:27,577 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:10:27,609 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-09 01:10:27,687 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:10:27,725 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-09 01:10:27,806 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:10:27,857 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+2026-02-09 01:10:27,938 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:10:27,985 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-09 01:10:28,060 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:10:28,062 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-09 01:10:28,102 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-02-09 01:10:28,191 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-02-09 01:10:28,264 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:10:28,306 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-09 01:10:28,555 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:10:28,636 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-09 01:10:28,728 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:10:28,764 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-02-09 01:10:28,850 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-02-09 01:10:28,947 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-02-09 01:10:29,136 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:10:29,165 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-02-09 01:10:29,267 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-02-09 01:10:29,271 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-09 01:10:29,280 - topology_builder - INFO - Clusters created: 0
+2026-02-09 01:16:57,988 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-09 01:16:57,996 - topology_builder - INFO - Edges built: 0
+2026-02-09 01:17:07,553 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-09 01:17:07,553 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-09 01:17:08,137 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:17:08,171 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-09 01:17:08,251 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:17:08,252 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-09 01:17:08,287 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-09 01:17:08,374 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:17:08,403 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-09 01:17:08,497 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:17:08,554 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+2026-02-09 01:17:08,632 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:17:08,669 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-09 01:17:08,752 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:17:08,787 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-02-09 01:17:08,872 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-02-09 01:17:08,959 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:17:08,992 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-09 01:17:09,290 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:17:09,333 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-09 01:17:09,412 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:17:09,446 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-02-09 01:17:09,534 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-02-09 01:17:09,644 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-02-09 01:17:09,857 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:17:09,888 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-02-09 01:17:09,974 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-02-09 01:17:09,979 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-09 01:17:09,988 - topology_builder - INFO - Clusters created: 0
+2026-02-09 01:34:03,630 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-09 01:34:03,639 - topology_builder - INFO - Edges built: 0
+2026-02-09 01:34:12,610 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-09 01:34:12,610 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-09 01:34:13,225 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:34:13,297 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-09 01:34:13,421 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:34:13,459 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-09 01:34:13,540 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:34:13,570 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-09 01:34:13,640 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:34:13,641 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-09 01:34:13,678 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+2026-02-09 01:34:13,770 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:34:13,802 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-09 01:34:13,889 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:34:13,920 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-02-09 01:34:14,005 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-02-09 01:34:14,086 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:34:14,119 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-09 01:34:14,435 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:34:14,479 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-09 01:34:14,564 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:34:14,601 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-02-09 01:34:14,687 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-02-09 01:34:14,822 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-02-09 01:34:15,002 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-09 01:34:15,029 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-02-09 01:34:15,183 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-02-09 01:34:15,188 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-09 01:34:15,197 - topology_builder - INFO - Clusters created: 0
+2026-02-09 02:34:15,205 - topology_builder - INFO - Edges built: 0
+2026-02-09 02:34:15,217 - topology_builder - INFO - Clusters created: 0
+2026-02-09 03:34:15,223 - topology_builder - INFO - Edges built: 0
+2026-02-09 03:34:15,227 - topology_builder - INFO - Clusters created: 0
+2026-02-09 04:34:15,233 - topology_builder - INFO - Edges built: 0
+2026-02-09 04:34:15,238 - topology_builder - INFO - Clusters created: 0
+2026-02-09 05:34:15,256 - topology_builder - INFO - Edges built: 0
+2026-02-09 05:34:15,259 - topology_builder - INFO - Clusters created: 0
+2026-02-09 06:34:15,264 - topology_builder - INFO - Edges built: 0
+2026-02-09 06:34:15,271 - topology_builder - INFO - Clusters created: 0
+2026-02-09 07:34:15,275 - topology_builder - INFO - Edges built: 0
+2026-02-09 07:34:15,280 - topology_builder - INFO - Clusters created: 0
+2026-02-09 08:34:15,284 - topology_builder - INFO - Edges built: 0
+2026-02-09 08:34:15,287 - topology_builder - INFO - Clusters created: 0
+2026-02-09 09:34:15,292 - topology_builder - INFO - Edges built: 0
+2026-02-09 09:34:15,297 - topology_builder - INFO - Clusters created: 0
+2026-02-09 10:34:15,300 - topology_builder - INFO - Edges built: 0
+2026-02-09 10:34:15,305 - topology_builder - INFO - Clusters created: 0
+2026-02-09 11:34:15,310 - topology_builder - INFO - Edges built: 0
+2026-02-09 11:34:15,313 - topology_builder - INFO - Clusters created: 0
+2026-02-09 12:34:15,318 - topology_builder - INFO - Edges built: 0
+2026-02-09 12:34:15,322 - topology_builder - INFO - Clusters created: 0
+2026-02-09 13:34:15,326 - topology_builder - INFO - Edges built: 0
+2026-02-09 13:34:15,329 - topology_builder - INFO - Clusters created: 0
+2026-02-09 14:34:15,333 - topology_builder - INFO - Edges built: 0
+2026-02-09 14:34:15,337 - topology_builder - INFO - Clusters created: 0
+2026-02-09 15:34:15,341 - topology_builder - INFO - Edges built: 0
+2026-02-09 15:34:15,344 - topology_builder - INFO - Clusters created: 0
+2026-02-09 16:34:15,348 - topology_builder - INFO - Edges built: 0
+2026-02-09 16:34:15,352 - topology_builder - INFO - Clusters created: 0
+2026-02-09 17:34:15,358 - topology_builder - INFO - Edges built: 0
+2026-02-09 17:34:15,363 - topology_builder - INFO - Clusters created: 0
+2026-02-09 18:34:15,368 - topology_builder - INFO - Edges built: 0
+2026-02-09 18:34:15,373 - topology_builder - INFO - Clusters created: 0
+2026-02-09 19:34:15,376 - topology_builder - INFO - Edges built: 0
+2026-02-09 19:34:15,381 - topology_builder - INFO - Clusters created: 0
+2026-02-09 20:34:15,385 - topology_builder - INFO - Edges built: 0
+2026-02-09 20:34:15,390 - topology_builder - INFO - Clusters created: 0
+2026-02-09 21:34:15,394 - topology_builder - INFO - Edges built: 0
+2026-02-09 21:34:15,399 - topology_builder - INFO - Clusters created: 0
+2026-02-09 22:34:15,403 - topology_builder - INFO - Edges built: 0
+2026-02-09 22:34:15,406 - topology_builder - INFO - Clusters created: 0
+2026-02-09 23:34:15,411 - topology_builder - INFO - Edges built: 0
+2026-02-09 23:34:15,415 - topology_builder - INFO - Clusters created: 0
+2026-02-10 00:34:15,426 - topology_builder - INFO - Edges built: 0
+2026-02-10 00:34:15,438 - topology_builder - INFO - Clusters created: 0
+2026-02-10 01:34:15,447 - topology_builder - INFO - Edges built: 0
+2026-02-10 01:34:15,450 - topology_builder - INFO - Clusters created: 0
+2026-02-10 02:34:15,455 - topology_builder - INFO - Edges built: 0
+2026-02-10 02:34:15,460 - topology_builder - INFO - Clusters created: 0
+2026-02-10 03:34:15,464 - topology_builder - INFO - Edges built: 0
+2026-02-10 03:34:15,467 - topology_builder - INFO - Clusters created: 0
+2026-02-10 04:34:15,472 - topology_builder - INFO - Edges built: 0
+2026-02-10 04:34:15,476 - topology_builder - INFO - Clusters created: 0
+2026-02-10 05:34:15,480 - topology_builder - INFO - Edges built: 0
+2026-02-10 05:34:15,483 - topology_builder - INFO - Clusters created: 0
+2026-02-10 06:34:15,490 - topology_builder - INFO - Edges built: 0
+2026-02-10 06:34:15,496 - topology_builder - INFO - Clusters created: 0
+2026-02-10 07:34:15,500 - topology_builder - INFO - Edges built: 0
+2026-02-10 07:34:15,505 - topology_builder - INFO - Clusters created: 0
+2026-02-10 08:26:38,450 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-10 08:26:38,457 - topology_builder - INFO - Edges built: 0
+2026-02-10 08:26:52,294 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-10 08:26:52,294 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-10 08:26:52,877 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 08:26:52,917 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-10 08:26:53,019 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 08:26:53,056 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-10 08:26:53,150 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 08:26:53,151 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-10 08:26:53,181 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-10 08:26:53,281 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 08:26:53,324 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+2026-02-10 08:26:53,408 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 08:26:53,443 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-10 08:26:53,538 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 08:26:53,585 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-02-10 08:26:53,670 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-02-10 08:26:53,773 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 08:26:53,803 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-10 08:26:54,120 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 08:26:54,158 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-10 08:26:54,261 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 08:26:54,317 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-02-10 08:26:54,408 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-02-10 08:26:54,500 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-02-10 08:26:54,692 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 08:26:54,730 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-02-10 08:26:54,844 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-02-10 08:26:54,850 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-10 08:26:54,857 - topology_builder - INFO - Clusters created: 0
+2026-02-10 09:26:54,969 - topology_builder - INFO - Edges built: 0
+2026-02-10 09:27:00,556 - topology_builder - WARNING - cluster_atoms attempt 1 failed (DB locked), retrying in 5s...
+2026-02-10 09:27:11,115 - topology_builder - WARNING - cluster_atoms attempt 2 failed (DB locked), retrying in 10s...
+2026-02-10 09:27:26,683 - topology_builder - ERROR - cluster_atoms failed: database is locked
+2026-02-10 10:27:26,733 - topology_builder - INFO - Edges built: 0
+2026-02-10 10:27:32,351 - topology_builder - WARNING - cluster_atoms attempt 1 failed (DB locked), retrying in 5s...
+2026-02-10 10:27:42,902 - topology_builder - WARNING - cluster_atoms attempt 2 failed (DB locked), retrying in 10s...
+2026-02-10 10:27:58,463 - topology_builder - ERROR - cluster_atoms failed: database is locked
+2026-02-10 11:27:58,485 - topology_builder - INFO - Edges built: 0
+2026-02-10 11:28:03,986 - topology_builder - WARNING - cluster_atoms attempt 1 failed (DB locked), retrying in 5s...
+2026-02-10 11:28:14,511 - topology_builder - WARNING - cluster_atoms attempt 2 failed (DB locked), retrying in 10s...
+2026-02-10 11:28:30,045 - topology_builder - ERROR - cluster_atoms failed: database is locked
+2026-02-10 12:28:30,053 - topology_builder - INFO - Edges built: 0
+2026-02-10 12:28:35,591 - topology_builder - WARNING - cluster_atoms attempt 1 failed (DB locked), retrying in 5s...
+2026-02-10 12:28:46,188 - topology_builder - WARNING - cluster_atoms attempt 2 failed (DB locked), retrying in 10s...
+2026-02-10 12:29:01,765 - topology_builder - ERROR - cluster_atoms failed: database is locked
+2026-02-10 13:29:01,772 - topology_builder - INFO - Edges built: 0
+2026-02-10 13:29:07,352 - topology_builder - WARNING - cluster_atoms attempt 1 failed (DB locked), retrying in 5s...
+2026-02-10 13:29:17,913 - topology_builder - WARNING - cluster_atoms attempt 2 failed (DB locked), retrying in 10s...
+2026-02-10 13:29:33,504 - topology_builder - ERROR - cluster_atoms failed: database is locked
+2026-02-10 14:29:33,511 - topology_builder - INFO - Edges built: 0
+2026-02-10 14:29:39,101 - topology_builder - WARNING - cluster_atoms attempt 1 failed (DB locked), retrying in 5s...
+2026-02-10 14:29:49,669 - topology_builder - WARNING - cluster_atoms attempt 2 failed (DB locked), retrying in 10s...
+2026-02-10 14:30:05,253 - topology_builder - ERROR - cluster_atoms failed: database is locked
+2026-02-10 15:30:05,263 - topology_builder - INFO - Edges built: 0
+2026-02-10 15:30:10,854 - topology_builder - WARNING - cluster_atoms attempt 1 failed (DB locked), retrying in 5s...
+2026-02-10 15:30:21,459 - topology_builder - WARNING - cluster_atoms attempt 2 failed (DB locked), retrying in 10s...
+2026-02-10 15:30:37,042 - topology_builder - ERROR - cluster_atoms failed: database is locked
+2026-02-10 16:30:37,049 - topology_builder - INFO - Edges built: 0
+2026-02-10 16:30:42,610 - topology_builder - WARNING - cluster_atoms attempt 1 failed (DB locked), retrying in 5s...
+2026-02-10 16:30:53,196 - topology_builder - WARNING - cluster_atoms attempt 2 failed (DB locked), retrying in 10s...
+2026-02-10 16:31:08,780 - topology_builder - ERROR - cluster_atoms failed: database is locked
+2026-02-10 17:31:08,791 - topology_builder - INFO - Edges built: 0
+2026-02-10 17:31:14,361 - topology_builder - WARNING - cluster_atoms attempt 1 failed (DB locked), retrying in 5s...
+2026-02-10 17:31:24,931 - topology_builder - WARNING - cluster_atoms attempt 2 failed (DB locked), retrying in 10s...
+2026-02-10 17:31:40,441 - topology_builder - ERROR - cluster_atoms failed: database is locked
+2026-02-10 18:31:40,449 - topology_builder - INFO - Edges built: 0
+2026-02-10 18:31:46,004 - topology_builder - WARNING - cluster_atoms attempt 1 failed (DB locked), retrying in 5s...
+2026-02-10 18:31:56,507 - topology_builder - WARNING - cluster_atoms attempt 2 failed (DB locked), retrying in 10s...
+2026-02-10 18:32:12,074 - topology_builder - ERROR - cluster_atoms failed: database is locked
+2026-02-10 19:32:12,794 - topology_builder - INFO - Edges built: 0
+2026-02-10 19:32:18,995 - topology_builder - WARNING - cluster_atoms attempt 1 failed (DB locked), retrying in 5s...
+2026-02-10 19:32:29,578 - topology_builder - WARNING - cluster_atoms attempt 2 failed (DB locked), retrying in 10s...
+2026-02-10 19:32:45,175 - topology_builder - ERROR - cluster_atoms failed: database is locked
+2026-02-10 20:32:45,194 - topology_builder - INFO - Edges built: 0
+2026-02-10 20:32:50,731 - topology_builder - WARNING - cluster_atoms attempt 1 failed (DB locked), retrying in 5s...
+2026-02-10 20:33:01,283 - topology_builder - WARNING - cluster_atoms attempt 2 failed (DB locked), retrying in 10s...
+2026-02-10 20:33:16,862 - topology_builder - ERROR - cluster_atoms failed: database is locked
+2026-02-10 21:41:02,567 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-10 21:41:02,573 - topology_builder - INFO - Edges built: 0
+2026-02-10 21:41:22,340 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-10 21:41:22,340 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-10 21:41:23,034 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 21:41:23,070 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-10 21:41:23,163 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 21:41:23,194 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-10 21:41:23,269 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 21:41:23,314 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-10 21:41:23,402 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 21:41:23,403 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-10 21:41:23,440 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+2026-02-10 21:41:23,544 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 21:41:23,593 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-10 21:41:23,676 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 21:41:23,714 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-02-10 21:41:23,802 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-02-10 21:41:23,876 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 21:41:23,914 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-10 21:41:24,604 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 21:41:24,638 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-10 21:41:24,759 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 21:41:24,793 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-02-10 21:41:24,900 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-02-10 21:41:24,994 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-02-10 21:41:25,197 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-10 21:41:25,235 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-02-10 21:41:25,360 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-02-10 21:41:25,367 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-10 21:41:30,863 - topology_builder - INFO - Clusters created: 0
+2026-02-10 22:41:31,599 - topology_builder - INFO - Built 778 edges for 73 atoms
+2026-02-10 22:41:31,599 - topology_builder - INFO - Edges built: 778
+2026-02-10 22:41:34,632 - topology_builder - INFO - Created 15 clusters
+2026-02-10 22:41:34,632 - topology_builder - INFO - Clusters created: 15
+2026-02-10 23:41:34,677 - topology_builder - INFO - Built 30 edges for 3 atoms
+2026-02-10 23:41:34,678 - topology_builder - INFO - Edges built: 30
+2026-02-10 23:41:34,778 - topology_builder - INFO - Created 15 clusters
+2026-02-10 23:41:34,779 - topology_builder - INFO - Clusters created: 15
+2026-02-11 00:41:34,794 - topology_builder - INFO - Edges built: 0
+2026-02-11 00:41:34,896 - topology_builder - INFO - Created 15 clusters
+2026-02-11 00:41:34,896 - topology_builder - INFO - Clusters created: 15
+2026-02-11 01:41:34,920 - topology_builder - INFO - Edges built: 0
+2026-02-11 01:41:35,029 - topology_builder - INFO - Created 15 clusters
+2026-02-11 01:41:35,032 - topology_builder - INFO - Clusters created: 15
+2026-02-11 08:26:40,784 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-11 08:26:40,799 - topology_builder - INFO - Edges built: 0
+2026-02-11 08:26:52,718 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-11 08:26:52,718 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-11 08:26:53,729 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-11 08:26:53,759 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-11 08:26:53,840 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-11 08:26:53,841 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-11 08:26:53,868 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-11 08:26:53,963 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-11 08:26:54,031 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-11 08:26:54,232 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-02-11 08:26:54,264 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+2026-02-11 08:26:54,360 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-11 08:26:54,398 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-11 08:26:54,482 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-11 08:26:54,517 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-02-11 08:26:54,607 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-02-11 08:26:54,680 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-11 08:26:54,707 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-11 08:26:55,100 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-11 08:26:55,127 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-11 08:26:55,202 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-11 08:26:55,243 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-02-11 08:26:55,347 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-02-11 08:26:55,434 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-02-11 08:26:55,610 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-11 08:26:55,645 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-02-11 08:26:55,750 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-02-11 08:26:55,756 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-11 08:26:58,368 - topology_builder - INFO - Created 15 clusters
+2026-02-11 08:26:58,368 - topology_builder - INFO - Clusters created: 15
+2026-02-11 09:26:58,378 - topology_builder - INFO - Edges built: 0
+2026-02-11 09:26:58,513 - topology_builder - INFO - Created 15 clusters
+2026-02-11 09:26:58,515 - topology_builder - INFO - Clusters created: 15
+2026-02-11 10:26:58,524 - topology_builder - INFO - Edges built: 0
+2026-02-11 10:26:58,638 - topology_builder - INFO - Created 15 clusters
+2026-02-11 10:26:58,639 - topology_builder - INFO - Clusters created: 15
+2026-02-11 11:26:58,648 - topology_builder - INFO - Edges built: 0
+2026-02-11 11:26:58,720 - topology_builder - INFO - Created 15 clusters
+2026-02-11 11:26:58,721 - topology_builder - INFO - Clusters created: 15
+2026-02-11 12:26:58,728 - topology_builder - INFO - Edges built: 0
+2026-02-11 12:26:58,786 - topology_builder - INFO - Created 15 clusters
+2026-02-11 12:26:58,786 - topology_builder - INFO - Clusters created: 15
+2026-02-11 13:26:58,791 - topology_builder - INFO - Edges built: 0
+2026-02-11 13:26:58,847 - topology_builder - INFO - Created 15 clusters
+2026-02-11 13:26:58,848 - topology_builder - INFO - Clusters created: 15
+2026-02-11 14:26:58,852 - topology_builder - INFO - Edges built: 0
+2026-02-11 14:26:58,916 - topology_builder - INFO - Created 15 clusters
+2026-02-11 14:26:58,917 - topology_builder - INFO - Clusters created: 15
+2026-02-11 15:26:58,921 - topology_builder - INFO - Edges built: 0
+2026-02-11 15:26:58,999 - topology_builder - INFO - Created 15 clusters
+2026-02-11 15:26:59,000 - topology_builder - INFO - Clusters created: 15
+2026-02-11 16:26:59,038 - topology_builder - INFO - Built 12 edges for 3 atoms
+2026-02-11 16:26:59,038 - topology_builder - INFO - Edges built: 12
+2026-02-11 16:26:59,108 - topology_builder - INFO - Created 15 clusters
+2026-02-11 16:26:59,109 - topology_builder - INFO - Clusters created: 15
+2026-02-11 17:26:59,123 - topology_builder - INFO - Built 6 edges for 1 atoms
+2026-02-11 17:26:59,124 - topology_builder - INFO - Edges built: 6
+2026-02-11 17:26:59,198 - topology_builder - INFO - Created 15 clusters
+2026-02-11 17:26:59,199 - topology_builder - INFO - Clusters created: 15
+2026-02-11 18:26:59,204 - topology_builder - INFO - Edges built: 0
+2026-02-11 18:26:59,269 - topology_builder - INFO - Created 15 clusters
+2026-02-11 18:26:59,270 - topology_builder - INFO - Clusters created: 15
+2026-02-11 19:26:59,282 - topology_builder - INFO - Edges built: 0
+2026-02-11 19:26:59,368 - topology_builder - INFO - Created 15 clusters
+2026-02-11 19:26:59,369 - topology_builder - INFO - Clusters created: 15
+2026-02-11 20:26:59,374 - topology_builder - INFO - Edges built: 0
+2026-02-11 20:26:59,438 - topology_builder - INFO - Created 15 clusters
+2026-02-11 20:26:59,439 - topology_builder - INFO - Clusters created: 15
+2026-02-11 21:26:59,444 - topology_builder - INFO - Edges built: 0
+2026-02-11 21:26:59,505 - topology_builder - INFO - Created 15 clusters
+2026-02-11 21:26:59,505 - topology_builder - INFO - Clusters created: 15
+2026-02-11 22:26:59,519 - topology_builder - INFO - Built 7 edges for 1 atoms
+2026-02-11 22:26:59,519 - topology_builder - INFO - Edges built: 7
+2026-02-11 22:26:59,594 - topology_builder - INFO - Created 15 clusters
+2026-02-11 22:26:59,594 - topology_builder - INFO - Clusters created: 15
+2026-02-11 23:26:59,599 - topology_builder - INFO - Edges built: 0
+2026-02-11 23:26:59,662 - topology_builder - INFO - Created 15 clusters
+2026-02-11 23:26:59,662 - topology_builder - INFO - Clusters created: 15
+2026-02-12 00:26:59,666 - topology_builder - INFO - Edges built: 0
+2026-02-12 00:26:59,728 - topology_builder - INFO - Created 15 clusters
+2026-02-12 00:26:59,729 - topology_builder - INFO - Clusters created: 15
+2026-02-12 01:26:59,734 - topology_builder - INFO - Edges built: 0
+2026-02-12 01:26:59,803 - topology_builder - INFO - Created 15 clusters
+2026-02-12 01:26:59,804 - topology_builder - INFO - Clusters created: 15
+2026-02-12 02:26:59,809 - topology_builder - INFO - Edges built: 0
+2026-02-12 02:26:59,871 - topology_builder - INFO - Created 15 clusters
+2026-02-12 02:26:59,871 - topology_builder - INFO - Clusters created: 15
+2026-02-12 03:26:59,875 - topology_builder - INFO - Edges built: 0
+2026-02-12 03:26:59,939 - topology_builder - INFO - Created 15 clusters
+2026-02-12 03:26:59,940 - topology_builder - INFO - Clusters created: 15
+2026-02-12 04:26:59,944 - topology_builder - INFO - Edges built: 0
+2026-02-12 04:27:00,003 - topology_builder - INFO - Created 15 clusters
+2026-02-12 04:27:00,003 - topology_builder - INFO - Clusters created: 15
+2026-02-12 05:27:00,008 - topology_builder - INFO - Edges built: 0
+2026-02-12 05:27:00,078 - topology_builder - INFO - Created 15 clusters
+2026-02-12 05:27:00,079 - topology_builder - INFO - Clusters created: 15
+2026-02-12 06:27:00,083 - topology_builder - INFO - Edges built: 0
+2026-02-12 06:27:00,150 - topology_builder - INFO - Created 15 clusters
+2026-02-12 06:27:00,150 - topology_builder - INFO - Clusters created: 15
+2026-02-12 07:27:00,155 - topology_builder - INFO - Edges built: 0
+2026-02-12 07:27:00,241 - topology_builder - INFO - Created 15 clusters
+2026-02-12 07:27:00,241 - topology_builder - INFO - Clusters created: 15
+2026-02-12 08:27:00,246 - topology_builder - INFO - Edges built: 0
+2026-02-12 08:27:00,319 - topology_builder - INFO - Created 15 clusters
+2026-02-12 08:27:00,320 - topology_builder - INFO - Clusters created: 15
+2026-02-12 09:27:00,325 - topology_builder - INFO - Edges built: 0
+2026-02-12 09:27:00,383 - topology_builder - INFO - Created 15 clusters
+2026-02-12 09:27:00,384 - topology_builder - INFO - Clusters created: 15
+2026-02-12 10:27:00,387 - topology_builder - INFO - Edges built: 0
+2026-02-12 10:27:00,446 - topology_builder - INFO - Created 15 clusters
+2026-02-12 10:27:00,446 - topology_builder - INFO - Clusters created: 15
+2026-02-12 11:27:00,451 - topology_builder - INFO - Edges built: 0
+2026-02-12 11:27:00,515 - topology_builder - INFO - Created 15 clusters
+2026-02-12 11:27:00,516 - topology_builder - INFO - Clusters created: 15
+2026-02-12 12:27:00,520 - topology_builder - INFO - Edges built: 0
+2026-02-12 12:27:00,579 - topology_builder - INFO - Created 15 clusters
+2026-02-12 12:27:00,580 - topology_builder - INFO - Clusters created: 15
+2026-02-12 13:27:05,567 - topology_builder - INFO - Edges built: 0
+2026-02-12 13:27:05,628 - topology_builder - INFO - Created 15 clusters
+2026-02-12 13:27:05,629 - topology_builder - INFO - Clusters created: 15
+2026-02-12 14:27:05,633 - topology_builder - INFO - Edges built: 0
+2026-02-12 14:27:05,701 - topology_builder - INFO - Created 15 clusters
+2026-02-12 14:27:05,702 - topology_builder - INFO - Clusters created: 15
+2026-02-12 15:27:05,706 - topology_builder - INFO - Edges built: 0
+2026-02-12 15:27:05,773 - topology_builder - INFO - Created 15 clusters
+2026-02-12 15:27:05,774 - topology_builder - INFO - Clusters created: 15
+2026-02-12 16:27:05,779 - topology_builder - INFO - Edges built: 0
+2026-02-12 16:27:05,845 - topology_builder - INFO - Created 15 clusters
+2026-02-12 16:27:05,846 - topology_builder - INFO - Clusters created: 15
+2026-02-12 17:27:05,850 - topology_builder - INFO - Edges built: 0
+2026-02-12 17:27:05,908 - topology_builder - INFO - Created 15 clusters
+2026-02-12 17:27:05,909 - topology_builder - INFO - Clusters created: 15
+2026-02-12 17:43:41,161 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-12 17:43:41,166 - topology_builder - INFO - Edges built: 0
+2026-02-12 17:43:56,345 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-12 17:43:56,346 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-12 17:43:57,241 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-12 17:43:57,271 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-12 17:43:57,351 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-12 17:43:57,391 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-12 17:43:57,469 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-12 17:43:57,507 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-12 17:43:57,596 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-02-12 17:43:57,628 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+2026-02-12 17:43:57,711 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-12 17:43:57,742 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-12 17:43:57,837 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-12 17:43:57,886 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-02-12 17:43:57,977 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-02-12 17:43:58,072 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-12 17:43:58,073 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-12 17:43:58,107 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-12 17:43:58,402 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-12 17:43:58,447 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-12 17:43:58,553 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-12 17:43:58,628 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-02-12 17:43:58,756 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-02-12 17:43:58,858 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-02-12 17:43:59,034 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-12 17:43:59,062 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-02-12 17:43:59,164 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-02-12 17:43:59,170 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-12 17:44:01,352 - topology_builder - INFO - Created 15 clusters
+2026-02-12 17:44:01,353 - topology_builder - INFO - Clusters created: 15
+2026-02-12 18:44:01,371 - topology_builder - INFO - Built 0 edges for 1 atoms
+2026-02-12 18:44:01,371 - topology_builder - INFO - Edges built: 0
+2026-02-12 18:44:01,444 - topology_builder - INFO - Created 15 clusters
+2026-02-12 18:44:01,444 - topology_builder - INFO - Clusters created: 15
+2026-02-12 19:44:01,461 - topology_builder - INFO - Built 0 edges for 1 atoms
+2026-02-12 19:44:01,461 - topology_builder - INFO - Edges built: 0
+2026-02-12 19:44:01,611 - topology_builder - INFO - Created 15 clusters
+2026-02-12 19:44:01,612 - topology_builder - INFO - Clusters created: 15
+2026-02-12 20:44:01,629 - topology_builder - INFO - Built 0 edges for 1 atoms
+2026-02-12 20:44:01,629 - topology_builder - INFO - Edges built: 0
+2026-02-12 20:44:01,713 - topology_builder - INFO - Created 15 clusters
+2026-02-12 20:44:01,713 - topology_builder - INFO - Clusters created: 15
+2026-02-12 21:44:01,750 - topology_builder - INFO - Built 12 edges for 3 atoms
+2026-02-12 21:44:01,751 - topology_builder - INFO - Edges built: 12
+2026-02-12 21:44:01,850 - topology_builder - INFO - Created 15 clusters
+2026-02-12 21:44:01,851 - topology_builder - INFO - Clusters created: 15
+2026-02-12 22:44:01,856 - topology_builder - INFO - Edges built: 0
+2026-02-12 22:44:01,933 - topology_builder - INFO - Created 15 clusters
+2026-02-12 22:44:01,934 - topology_builder - INFO - Clusters created: 15
+2026-02-12 23:44:01,942 - topology_builder - INFO - Edges built: 0
+2026-02-12 23:44:02,010 - topology_builder - INFO - Created 15 clusters
+2026-02-12 23:44:02,011 - topology_builder - INFO - Clusters created: 15
+2026-02-13 00:44:02,016 - topology_builder - INFO - Edges built: 0
+2026-02-13 00:44:02,083 - topology_builder - INFO - Created 15 clusters
+2026-02-13 00:44:02,083 - topology_builder - INFO - Clusters created: 15
+2026-02-13 01:44:02,088 - topology_builder - INFO - Edges built: 0
+2026-02-13 01:44:02,159 - topology_builder - INFO - Created 15 clusters
+2026-02-13 01:44:02,162 - topology_builder - INFO - Clusters created: 15
+2026-02-13 02:44:02,168 - topology_builder - INFO - Edges built: 0
+2026-02-13 02:44:02,935 - topology_builder - INFO - Created 15 clusters
+2026-02-13 02:44:02,936 - topology_builder - INFO - Clusters created: 15
+2026-02-13 03:44:02,942 - topology_builder - INFO - Edges built: 0
+2026-02-13 03:44:03,032 - topology_builder - INFO - Created 15 clusters
+2026-02-13 03:44:03,033 - topology_builder - INFO - Clusters created: 15
+2026-02-13 04:44:03,037 - topology_builder - INFO - Edges built: 0
+2026-02-13 04:44:03,101 - topology_builder - INFO - Created 15 clusters
+2026-02-13 04:44:03,102 - topology_builder - INFO - Clusters created: 15
+2026-02-13 05:44:03,107 - topology_builder - INFO - Edges built: 0
+2026-02-13 05:44:03,183 - topology_builder - INFO - Created 15 clusters
+2026-02-13 05:44:03,184 - topology_builder - INFO - Clusters created: 15
+2026-02-13 06:44:03,188 - topology_builder - INFO - Edges built: 0
+2026-02-13 06:44:03,266 - topology_builder - INFO - Created 15 clusters
+2026-02-13 06:44:03,267 - topology_builder - INFO - Clusters created: 15
+2026-02-13 07:44:03,272 - topology_builder - INFO - Edges built: 0
+2026-02-13 07:44:03,351 - topology_builder - INFO - Created 15 clusters
+2026-02-13 07:44:03,352 - topology_builder - INFO - Clusters created: 15
+2026-02-13 08:44:03,361 - topology_builder - INFO - Edges built: 0
+2026-02-13 08:44:03,444 - topology_builder - INFO - Created 15 clusters
+2026-02-13 08:44:03,445 - topology_builder - INFO - Clusters created: 15
+2026-02-13 09:44:03,452 - topology_builder - INFO - Edges built: 0
+2026-02-13 09:44:03,545 - topology_builder - INFO - Created 15 clusters
+2026-02-13 09:44:03,546 - topology_builder - INFO - Clusters created: 15
+2026-02-13 10:44:03,564 - topology_builder - INFO - Edges built: 0
+2026-02-13 10:44:03,658 - topology_builder - INFO - Created 15 clusters
+2026-02-13 10:44:03,659 - topology_builder - INFO - Clusters created: 15
+2026-02-13 11:44:03,669 - topology_builder - INFO - Edges built: 0
+2026-02-13 11:44:03,767 - topology_builder - INFO - Created 15 clusters
+2026-02-13 11:44:03,769 - topology_builder - INFO - Clusters created: 15
+2026-02-13 12:41:28,917 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-13 12:41:28,925 - topology_builder - INFO - Edges built: 0
+2026-02-13 12:41:43,904 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-13 12:41:43,905 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-13 12:41:44,667 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-13 12:41:44,707 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-13 12:41:44,785 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-13 12:41:44,822 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-13 12:41:44,939 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-13 12:41:44,966 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-02-13 12:41:45,080 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-02-13 12:41:45,121 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+2026-02-13 12:41:45,203 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-13 12:41:45,241 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-02-13 12:41:45,335 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-13 12:41:45,380 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-02-13 12:41:45,472 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-02-13 12:41:45,564 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-13 12:41:45,600 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-13 12:41:45,910 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-13 12:41:45,952 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-02-13 12:41:46,045 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-13 12:41:46,092 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-02-13 12:41:46,186 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-02-13 12:41:46,271 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-02-13 12:41:46,465 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-02-13 12:41:46,501 - topology_builder - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-02-13 12:41:46,593 - topology_builder - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-02-13 12:41:46,607 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-13 12:41:49,878 - topology_builder - INFO - Created 15 clusters
+2026-02-13 12:41:49,879 - topology_builder - INFO - Clusters created: 15
+2026-02-13 13:41:49,936 - topology_builder - INFO - Edges built: 0
+2026-02-13 13:41:50,298 - topology_builder - INFO - Created 15 clusters
+2026-02-13 13:41:50,300 - topology_builder - INFO - Clusters created: 15
+2026-02-13 14:41:50,315 - topology_builder - INFO - Edges built: 0
+2026-02-13 14:41:50,416 - topology_builder - INFO - Created 15 clusters
+2026-02-13 14:41:50,417 - topology_builder - INFO - Clusters created: 15
+2026-02-13 15:41:50,428 - topology_builder - INFO - Edges built: 0
+2026-02-13 15:41:50,529 - topology_builder - INFO - Created 15 clusters
+2026-02-13 15:41:50,530 - topology_builder - INFO - Clusters created: 15
+2026-02-13 16:41:50,566 - topology_builder - INFO - Built 5 edges for 1 atoms
+2026-02-13 16:41:50,567 - topology_builder - INFO - Edges built: 5
+2026-02-13 16:41:50,671 - topology_builder - INFO - Created 15 clusters
+2026-02-13 16:41:50,672 - topology_builder - INFO - Clusters created: 15
+2026-02-13 17:41:55,374 - topology_builder - INFO - Edges built: 0
+2026-02-13 17:41:55,546 - topology_builder - INFO - Created 15 clusters
+2026-02-13 17:41:55,547 - topology_builder - INFO - Clusters created: 15
+2026-02-13 18:13:42,699 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-13 18:13:42,710 - topology_builder - INFO - Edges built: 0
+2026-02-13 18:13:56,553 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-13 18:13:56,553 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-13 18:13:57,463 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-13 18:13:59,087 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-13 18:14:02,194 - topology_builder - INFO - Created 15 clusters
+2026-02-13 18:14:02,195 - topology_builder - INFO - Clusters created: 15
+2026-02-13 19:14:02,204 - topology_builder - INFO - Edges built: 0
+2026-02-13 19:14:02,290 - topology_builder - INFO - Created 15 clusters
+2026-02-13 19:14:02,290 - topology_builder - INFO - Clusters created: 15
+2026-02-13 20:14:02,301 - topology_builder - INFO - Edges built: 0
+2026-02-13 20:14:02,379 - topology_builder - INFO - Created 15 clusters
+2026-02-13 20:14:02,380 - topology_builder - INFO - Clusters created: 15
+2026-02-13 20:32:50,118 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-13 20:32:50,129 - topology_builder - INFO - Edges built: 0
+2026-02-13 20:33:02,634 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-13 20:33:02,634 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-13 20:33:03,659 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-13 20:33:05,115 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-13 20:33:07,669 - topology_builder - INFO - Created 15 clusters
+2026-02-13 20:33:07,670 - topology_builder - INFO - Clusters created: 15
+2026-02-13 21:33:07,727 - topology_builder - INFO - Built 5 edges for 2 atoms
+2026-02-13 21:33:07,728 - topology_builder - INFO - Edges built: 5
+2026-02-13 21:33:07,847 - topology_builder - INFO - Created 15 clusters
+2026-02-13 21:33:07,848 - topology_builder - INFO - Clusters created: 15
+2026-02-13 22:33:07,866 - topology_builder - INFO - Edges built: 0
+2026-02-13 22:33:07,983 - topology_builder - INFO - Created 15 clusters
+2026-02-13 22:33:07,984 - topology_builder - INFO - Clusters created: 15
+2026-02-13 23:33:08,005 - topology_builder - INFO - Edges built: 0
+2026-02-13 23:33:08,133 - topology_builder - INFO - Created 15 clusters
+2026-02-13 23:33:08,134 - topology_builder - INFO - Clusters created: 15
+2026-02-14 00:33:15,738 - topology_builder - INFO - Built 4218 edges for 200 atoms
+2026-02-14 00:33:15,740 - topology_builder - INFO - Edges built: 4218
+2026-02-14 00:33:15,964 - topology_builder - INFO - Created 15 clusters
+2026-02-14 00:33:15,967 - topology_builder - INFO - Clusters created: 15
+2026-02-14 01:33:36,985 - topology_builder - INFO - Built 16425 edges for 200 atoms
+2026-02-14 01:33:36,987 - topology_builder - INFO - Edges built: 16425
+2026-02-14 01:33:37,359 - topology_builder - INFO - Created 15 clusters
+2026-02-14 01:33:37,365 - topology_builder - INFO - Clusters created: 15
+2026-02-14 02:34:06,564 - topology_builder - INFO - Built 29590 edges for 200 atoms
+2026-02-14 02:34:06,566 - topology_builder - INFO - Edges built: 29590
+2026-02-14 02:34:07,046 - topology_builder - INFO - Created 15 clusters
+2026-02-14 02:34:07,054 - topology_builder - INFO - Clusters created: 15
+2026-02-14 03:34:47,689 - topology_builder - INFO - Built 41099 edges for 200 atoms
+2026-02-14 03:34:47,690 - topology_builder - INFO - Edges built: 41099
+2026-02-14 03:34:48,404 - topology_builder - INFO - Created 15 clusters
+2026-02-14 03:34:48,413 - topology_builder - INFO - Clusters created: 15
+2026-02-14 04:35:33,833 - topology_builder - INFO - Built 17207 edges for 200 atoms
+2026-02-14 04:35:33,834 - topology_builder - INFO - Edges built: 17207
+2026-02-14 04:35:34,705 - topology_builder - INFO - Created 15 clusters
+2026-02-14 04:35:34,718 - topology_builder - INFO - Clusters created: 15
+2026-02-14 05:36:28,819 - topology_builder - INFO - Built 12820 edges for 200 atoms
+2026-02-14 05:36:28,820 - topology_builder - INFO - Edges built: 12820
+2026-02-14 05:36:29,697 - topology_builder - INFO - Created 15 clusters
+2026-02-14 05:36:29,712 - topology_builder - INFO - Clusters created: 15
+2026-02-14 06:37:30,598 - topology_builder - INFO - Built 14930 edges for 200 atoms
+2026-02-14 06:37:30,599 - topology_builder - INFO - Edges built: 14930
+2026-02-14 06:37:36,379 - topology_builder - INFO - Created 15 clusters
+2026-02-14 06:37:36,398 - topology_builder - INFO - Clusters created: 15
+2026-02-14 07:38:44,306 - topology_builder - INFO - Built 58535 edges for 200 atoms
+2026-02-14 07:38:44,307 - topology_builder - INFO - Edges built: 58535
+2026-02-14 07:38:45,718 - topology_builder - INFO - Created 15 clusters
+2026-02-14 07:38:45,735 - topology_builder - INFO - Clusters created: 15
+2026-02-14 08:39:59,340 - topology_builder - INFO - Built 96898 edges for 200 atoms
+2026-02-14 08:39:59,341 - topology_builder - INFO - Edges built: 96898
+2026-02-14 08:40:00,732 - topology_builder - INFO - Created 15 clusters
+2026-02-14 08:40:00,753 - topology_builder - INFO - Clusters created: 15
+2026-02-14 09:41:12,917 - topology_builder - INFO - Built 92497 edges for 200 atoms
+2026-02-14 09:41:12,919 - topology_builder - INFO - Edges built: 92497
+2026-02-14 09:41:14,318 - topology_builder - INFO - Created 15 clusters
+2026-02-14 09:41:14,338 - topology_builder - INFO - Clusters created: 15
+2026-02-14 10:42:41,306 - topology_builder - INFO - Built 73408 edges for 200 atoms
+2026-02-14 10:42:41,309 - topology_builder - INFO - Edges built: 73408
+2026-02-14 10:42:49,136 - topology_builder - INFO - Created 15 clusters
+2026-02-14 10:42:49,155 - topology_builder - INFO - Clusters created: 15
+2026-02-14 11:44:24,017 - topology_builder - INFO - Built 78795 edges for 200 atoms
+2026-02-14 11:44:24,020 - topology_builder - INFO - Edges built: 78795
+2026-02-14 11:44:25,777 - topology_builder - INFO - Created 15 clusters
+2026-02-14 11:44:25,799 - topology_builder - INFO - Clusters created: 15
+2026-02-14 12:45:38,268 - topology_builder - INFO - Built 78114 edges for 200 atoms
+2026-02-14 12:45:38,270 - topology_builder - INFO - Edges built: 78114
+2026-02-14 12:45:39,676 - topology_builder - INFO - Created 15 clusters
+2026-02-14 12:45:39,693 - topology_builder - INFO - Clusters created: 15
+2026-02-14 13:46:16,572 - topology_builder - INFO - Built 13508 edges for 105 atoms
+2026-02-14 13:46:16,573 - topology_builder - INFO - Edges built: 13508
+2026-02-14 13:46:17,878 - topology_builder - INFO - Created 15 clusters
+2026-02-14 13:46:17,898 - topology_builder - INFO - Clusters created: 15
+2026-02-14 14:46:24,809 - topology_builder - INFO - Built 3811 edges for 20 atoms
+2026-02-14 14:46:24,810 - topology_builder - INFO - Edges built: 3811
+2026-02-14 14:46:26,190 - topology_builder - INFO - Created 15 clusters
+2026-02-14 14:46:26,209 - topology_builder - INFO - Clusters created: 15
+2026-02-14 14:59:45,668 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-14 14:59:45,703 - topology_builder - INFO - Edges built: 0
+2026-02-14 14:59:56,139 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-14 14:59:56,139 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-14 14:59:57,730 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-14 14:59:58,724 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-14 15:00:02,036 - topology_builder - INFO - Created 15 clusters
+2026-02-14 15:00:02,057 - topology_builder - INFO - Clusters created: 15
+2026-02-14 15:04:13,329 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-14 15:04:13,372 - topology_builder - INFO - Edges built: 0
+2026-02-14 15:04:21,551 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-14 15:04:21,552 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-14 15:04:22,142 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-14 15:04:24,025 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-14 15:04:27,095 - topology_builder - INFO - Created 15 clusters
+2026-02-14 15:04:27,116 - topology_builder - INFO - Clusters created: 15
+2026-02-14 16:04:27,164 - topology_builder - INFO - Edges built: 0
+2026-02-14 16:04:29,111 - topology_builder - INFO - Created 15 clusters
+2026-02-14 16:04:29,139 - topology_builder - INFO - Clusters created: 15
+2026-02-14 17:02:45,205 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-14 17:02:45,241 - topology_builder - INFO - Edges built: 0
+2026-02-14 17:02:54,145 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-14 17:02:54,145 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-14 17:02:55,224 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-14 17:02:56,895 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-14 17:03:00,637 - topology_builder - INFO - Created 15 clusters
+2026-02-14 17:03:00,660 - topology_builder - INFO - Clusters created: 15
+2026-02-14 18:03:01,174 - topology_builder - INFO - Edges built: 0
+2026-02-14 18:03:03,293 - topology_builder - INFO - Created 15 clusters
+2026-02-14 18:03:03,315 - topology_builder - INFO - Clusters created: 15
+2026-02-14 19:03:03,360 - topology_builder - INFO - Edges built: 0
+2026-02-14 19:03:05,255 - topology_builder - INFO - Created 15 clusters
+2026-02-14 19:03:05,280 - topology_builder - INFO - Clusters created: 15
+2026-02-14 20:04:29,574 - topology_builder - INFO - Built 20427 edges for 200 atoms
+2026-02-14 20:04:29,577 - topology_builder - INFO - Edges built: 20427
+2026-02-14 20:04:32,340 - topology_builder - INFO - Created 15 clusters
+2026-02-14 20:04:32,372 - topology_builder - INFO - Clusters created: 15
+2026-02-14 21:06:04,015 - topology_builder - INFO - Built 92985 edges for 200 atoms
+2026-02-14 21:06:04,017 - topology_builder - INFO - Edges built: 92985
+2026-02-14 21:06:05,655 - topology_builder - INFO - Created 15 clusters
+2026-02-14 21:06:05,681 - topology_builder - INFO - Clusters created: 15
+2026-02-14 22:07:56,254 - topology_builder - INFO - Built 60395 edges for 200 atoms
+2026-02-14 22:07:56,255 - topology_builder - INFO - Edges built: 60395
+2026-02-14 22:07:59,569 - topology_builder - INFO - Created 15 clusters
+2026-02-14 22:07:59,594 - topology_builder - INFO - Clusters created: 15
+2026-02-14 23:11:07,520 - topology_builder - INFO - Built 72348 edges for 200 atoms
+2026-02-14 23:11:07,522 - topology_builder - INFO - Edges built: 72348
+2026-02-14 23:11:10,643 - topology_builder - INFO - Created 15 clusters
+2026-02-14 23:11:10,676 - topology_builder - INFO - Clusters created: 15
+2026-02-15 00:13:14,308 - topology_builder - INFO - Built 94873 edges for 200 atoms
+2026-02-15 00:13:14,310 - topology_builder - INFO - Edges built: 94873
+2026-02-15 00:13:17,444 - topology_builder - INFO - Created 15 clusters
+2026-02-15 00:13:17,479 - topology_builder - INFO - Clusters created: 15
+2026-02-15 01:15:13,549 - topology_builder - INFO - Built 28328 edges for 200 atoms
+2026-02-15 01:15:13,551 - topology_builder - INFO - Edges built: 28328
+2026-02-15 01:15:16,333 - topology_builder - INFO - Created 15 clusters
+2026-02-15 01:15:16,363 - topology_builder - INFO - Clusters created: 15
+2026-02-15 02:17:13,753 - topology_builder - INFO - Built 38766 edges for 200 atoms
+2026-02-15 02:17:13,754 - topology_builder - INFO - Edges built: 38766
+2026-02-15 02:17:16,558 - topology_builder - INFO - Created 15 clusters
+2026-02-15 02:17:16,594 - topology_builder - INFO - Clusters created: 15
+2026-02-15 03:18:23,208 - topology_builder - INFO - Built 13221 edges for 113 atoms
+2026-02-15 03:18:23,211 - topology_builder - INFO - Edges built: 13221
+2026-02-15 03:18:26,042 - topology_builder - INFO - Created 15 clusters
+2026-02-15 03:18:26,076 - topology_builder - INFO - Clusters created: 15
+2026-02-15 04:18:26,137 - topology_builder - INFO - Edges built: 0
+2026-02-15 04:18:28,609 - topology_builder - INFO - Created 15 clusters
+2026-02-15 04:18:28,643 - topology_builder - INFO - Clusters created: 15
+2026-02-15 05:18:28,703 - topology_builder - INFO - Edges built: 0
+2026-02-15 05:18:31,394 - topology_builder - INFO - Created 15 clusters
+2026-02-15 05:18:31,428 - topology_builder - INFO - Clusters created: 15
+2026-02-15 06:18:31,494 - topology_builder - INFO - Edges built: 0
+2026-02-15 06:18:34,074 - topology_builder - INFO - Created 15 clusters
+2026-02-15 06:18:34,107 - topology_builder - INFO - Clusters created: 15
+2026-02-15 07:18:34,173 - topology_builder - INFO - Edges built: 0
+2026-02-15 07:18:36,669 - topology_builder - INFO - Created 15 clusters
+2026-02-15 07:18:36,699 - topology_builder - INFO - Clusters created: 15
+2026-02-15 08:18:36,762 - topology_builder - INFO - Edges built: 0
+2026-02-15 08:18:39,312 - topology_builder - INFO - Created 15 clusters
+2026-02-15 08:18:39,345 - topology_builder - INFO - Clusters created: 15
+2026-02-15 09:18:40,009 - topology_builder - INFO - Edges built: 0
+2026-02-15 09:18:42,589 - topology_builder - INFO - Created 15 clusters
+2026-02-15 09:18:42,620 - topology_builder - INFO - Clusters created: 15
+2026-02-15 10:18:42,689 - topology_builder - INFO - Edges built: 0
+2026-02-15 10:18:45,307 - topology_builder - INFO - Created 15 clusters
+2026-02-15 10:18:45,337 - topology_builder - INFO - Clusters created: 15
+2026-02-15 11:18:45,411 - topology_builder - INFO - Edges built: 0
+2026-02-15 11:18:47,921 - topology_builder - INFO - Created 15 clusters
+2026-02-15 11:18:47,950 - topology_builder - INFO - Clusters created: 15
+2026-02-15 12:18:50,308 - topology_builder - INFO - Built 67 edges for 3 atoms
+2026-02-15 12:18:50,311 - topology_builder - INFO - Edges built: 67
+2026-02-15 12:18:53,205 - topology_builder - INFO - Created 15 clusters
+2026-02-15 12:18:53,245 - topology_builder - INFO - Clusters created: 15
+2026-02-15 13:18:54,376 - topology_builder - INFO - Edges built: 0
+2026-02-15 13:18:57,685 - topology_builder - INFO - Created 15 clusters
+2026-02-15 13:18:57,722 - topology_builder - INFO - Clusters created: 15
+2026-02-15 14:19:04,645 - topology_builder - WARNING - build_edges attempt 1 failed (DB locked), retrying in 5s...
+2026-02-15 14:27:54,352 - topology_builder - INFO - Built 22387 edges for 200 atoms
+2026-02-15 14:27:54,354 - topology_builder - INFO - Edges built: 22387
+2026-02-15 14:28:10,345 - topology_builder - INFO - Created 15 clusters
+2026-02-15 14:28:10,488 - topology_builder - INFO - Clusters created: 15
+2026-02-15 19:46:41,180 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-15 19:46:54,268 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-15 19:46:54,275 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-15 19:46:55,108 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-15 19:46:57,580 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-15 19:47:03,764 - topology_builder - WARNING - build_edges attempt 1 failed (DB locked), retrying in 5s...
+2026-02-15 19:49:33,377 - topology_builder - INFO - Built 23996 edges for 200 atoms
+2026-02-15 19:49:33,380 - topology_builder - INFO - Edges built: 23996
+2026-02-15 19:49:38,050 - topology_builder - INFO - Created 15 clusters
+2026-02-15 19:49:38,086 - topology_builder - INFO - Clusters created: 15
+2026-02-15 19:50:37,230 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-15 19:50:45,833 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-15 19:50:45,833 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-15 19:50:48,099 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-15 19:50:48,637 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-15 19:53:00,862 - topology_builder - INFO - Built 35923 edges for 200 atoms
+2026-02-15 19:53:00,867 - topology_builder - INFO - Edges built: 35923
+2026-02-15 19:53:05,413 - topology_builder - INFO - Created 15 clusters
+2026-02-15 19:53:05,459 - topology_builder - INFO - Clusters created: 15
+2026-02-15 20:55:07,227 - topology_builder - INFO - Built 36075 edges for 200 atoms
+2026-02-15 20:55:07,232 - topology_builder - INFO - Edges built: 36075
+2026-02-15 20:55:09,548 - topology_builder - INFO - Created 15 clusters
+2026-02-15 20:55:09,592 - topology_builder - INFO - Clusters created: 15
+2026-02-15 21:07:29,826 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-15 21:07:40,680 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-15 21:07:40,680 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-15 21:07:41,331 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-15 21:07:43,297 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-15 21:09:47,853 - topology_builder - INFO - Built 47575 edges for 200 atoms
+2026-02-15 21:09:47,857 - topology_builder - INFO - Edges built: 47575
+2026-02-15 21:09:53,463 - topology_builder - WARNING - cluster_atoms attempt 1 failed (DB locked), retrying in 5s...
+2026-02-15 21:10:07,346 - topology_builder - INFO - Created 15 clusters
+2026-02-15 21:10:07,383 - topology_builder - INFO - Clusters created: 15
+2026-02-15 21:37:19,929 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-15 21:37:31,713 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-15 21:37:31,714 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-15 21:37:34,380 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-15 21:39:47,615 - topology_builder - INFO - Built 175422 edges for 200 atoms
+2026-02-15 21:39:47,618 - topology_builder - INFO - Edges built: 175422
+2026-02-15 21:39:52,356 - topology_builder - INFO - Created 15 clusters
+2026-02-15 21:39:52,402 - topology_builder - INFO - Clusters created: 15
+2026-02-15 21:48:41,514 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-15 21:48:48,849 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-15 21:48:48,850 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-15 21:48:49,841 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-15 21:48:51,507 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-15 21:51:08,561 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-15 21:51:16,040 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-15 21:51:16,041 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-15 21:51:16,969 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-15 21:51:18,534 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-15 21:51:24,186 - topology_builder - WARNING - build_edges attempt 1 failed (DB locked), retrying in 5s...
+2026-02-15 21:53:42,998 - topology_builder - INFO - Built 204822 edges for 200 atoms
+2026-02-15 21:53:43,002 - topology_builder - INFO - Edges built: 204822
+2026-02-15 21:53:48,365 - topology_builder - INFO - Created 15 clusters
+2026-02-15 21:53:48,402 - topology_builder - INFO - Clusters created: 15
+2026-02-15 22:00:24,276 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-15 22:00:34,317 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-15 22:00:34,319 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-15 22:00:35,572 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-15 22:00:38,108 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-15 22:00:43,991 - topology_builder - WARNING - build_edges attempt 1 failed (DB locked), retrying in 5s...
+2026-02-15 22:03:26,941 - topology_builder - INFO - Built 191760 edges for 200 atoms
+2026-02-15 22:03:26,945 - topology_builder - INFO - Edges built: 191760
+2026-02-15 22:03:31,345 - topology_builder - INFO - Created 15 clusters
+2026-02-15 22:03:31,384 - topology_builder - INFO - Clusters created: 15
+2026-02-15 22:18:01,410 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-15 22:18:10,871 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-15 22:18:10,871 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-15 22:18:13,386 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-15 22:20:34,981 - topology_builder - INFO - Built 198687 edges for 200 atoms
+2026-02-15 22:20:34,993 - topology_builder - INFO - Edges built: 198687
+2026-02-15 22:20:39,843 - topology_builder - INFO - Created 15 clusters
+2026-02-15 22:20:39,884 - topology_builder - INFO - Clusters created: 15
+2026-02-15 22:31:05,208 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-15 22:31:10,870 - topology_builder - WARNING - build_edges attempt 1 failed (DB locked), retrying in 5s...
+2026-02-15 22:31:25,271 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-15 22:31:25,271 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-15 22:31:26,167 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-15 22:31:27,780 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-15 22:33:54,650 - topology_builder - INFO - Built 220014 edges for 200 atoms
+2026-02-15 22:33:54,654 - topology_builder - INFO - Edges built: 220014
+2026-02-15 22:33:59,077 - topology_builder - INFO - Created 15 clusters
+2026-02-15 22:33:59,115 - topology_builder - INFO - Clusters created: 15
+2026-02-15 23:37:24,699 - topology_builder - INFO - Built 233948 edges for 200 atoms
+2026-02-15 23:37:24,701 - topology_builder - INFO - Edges built: 233948
+2026-02-15 23:37:28,287 - topology_builder - INFO - Created 15 clusters
+2026-02-15 23:37:28,337 - topology_builder - INFO - Clusters created: 15
+2026-02-16 01:06:08,800 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-16 01:06:17,780 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-16 01:06:17,780 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-16 01:06:18,801 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-16 01:06:20,790 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-16 01:06:26,460 - topology_builder - WARNING - build_edges attempt 1 failed (DB locked), retrying in 5s...
+2026-02-16 01:08:54,571 - topology_builder - INFO - Built 281970 edges for 200 atoms
+2026-02-16 01:08:54,575 - topology_builder - INFO - Edges built: 281970
+2026-02-16 01:08:58,690 - topology_builder - INFO - Created 15 clusters
+2026-02-16 01:08:58,734 - topology_builder - INFO - Clusters created: 15
+2026-02-16 02:12:03,030 - topology_builder - INFO - Built 258734 edges for 200 atoms
+2026-02-16 02:12:03,033 - topology_builder - INFO - Edges built: 258734
+2026-02-16 02:12:05,758 - topology_builder - INFO - Created 15 clusters
+2026-02-16 02:12:05,807 - topology_builder - INFO - Clusters created: 15
+2026-02-16 03:15:11,598 - topology_builder - INFO - Built 260140 edges for 200 atoms
+2026-02-16 03:15:11,600 - topology_builder - INFO - Edges built: 260140
+2026-02-16 03:15:14,704 - topology_builder - INFO - Created 15 clusters
+2026-02-16 03:15:14,759 - topology_builder - INFO - Clusters created: 15
+2026-02-16 04:18:23,170 - topology_builder - INFO - Built 254220 edges for 200 atoms
+2026-02-16 04:18:23,172 - topology_builder - INFO - Edges built: 254220
+2026-02-16 04:18:27,371 - topology_builder - INFO - Created 15 clusters
+2026-02-16 04:18:27,429 - topology_builder - INFO - Clusters created: 15
+2026-02-16 05:21:44,167 - topology_builder - INFO - Built 247642 edges for 200 atoms
+2026-02-16 05:21:44,170 - topology_builder - INFO - Edges built: 247642
+2026-02-16 05:21:48,233 - topology_builder - INFO - Created 15 clusters
+2026-02-16 05:21:48,287 - topology_builder - INFO - Clusters created: 15
+2026-02-16 06:24:53,579 - topology_builder - INFO - Built 26022 edges for 200 atoms
+2026-02-16 06:24:53,583 - topology_builder - INFO - Edges built: 26022
+2026-02-16 06:24:56,530 - topology_builder - INFO - Created 15 clusters
+2026-02-16 06:24:56,570 - topology_builder - INFO - Clusters created: 15
+2026-02-16 07:26:25,348 - topology_builder - INFO - Built 9796 edges for 95 atoms
+2026-02-16 07:26:25,352 - topology_builder - INFO - Edges built: 9796
+2026-02-16 07:26:29,311 - topology_builder - INFO - Created 15 clusters
+2026-02-16 07:26:29,359 - topology_builder - INFO - Clusters created: 15
+2026-02-16 08:26:29,431 - topology_builder - INFO - Edges built: 0
+2026-02-16 08:26:32,888 - topology_builder - INFO - Created 15 clusters
+2026-02-16 08:26:32,945 - topology_builder - INFO - Clusters created: 15
+2026-02-16 09:26:34,907 - topology_builder - INFO - Edges built: 0
+2026-02-16 09:26:37,248 - topology_builder - INFO - Created 15 clusters
+2026-02-16 09:26:37,287 - topology_builder - INFO - Clusters created: 15
+2026-02-16 09:43:03,697 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-16 09:43:03,768 - topology_builder - INFO - Edges built: 0
+2026-02-16 09:43:11,019 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-16 09:43:11,019 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-16 09:43:11,976 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-16 09:43:13,342 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-16 09:43:17,774 - topology_builder - INFO - Created 15 clusters
+2026-02-16 09:43:17,823 - topology_builder - INFO - Clusters created: 15
+2026-02-16 10:43:18,012 - topology_builder - INFO - Edges built: 0
+2026-02-16 10:43:23,201 - topology_builder - INFO - Created 15 clusters
+2026-02-16 10:43:23,293 - topology_builder - INFO - Clusters created: 15
+2026-02-16 11:43:23,366 - topology_builder - INFO - Edges built: 0
+2026-02-16 11:43:25,625 - topology_builder - INFO - Created 15 clusters
+2026-02-16 11:43:25,669 - topology_builder - INFO - Clusters created: 15
+2026-02-16 12:43:27,644 - topology_builder - INFO - Edges built: 0
+2026-02-16 12:43:31,109 - topology_builder - INFO - Created 15 clusters
+2026-02-16 12:43:31,176 - topology_builder - INFO - Clusters created: 15
+2026-02-16 19:54:11,536 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-16 19:54:11,652 - topology_builder - INFO - Edges built: 0
+2026-02-16 19:54:27,976 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-16 19:54:27,976 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-16 19:54:29,321 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-16 19:54:30,772 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-16 19:54:36,701 - topology_builder - INFO - Created 15 clusters
+2026-02-16 19:54:36,996 - topology_builder - INFO - Clusters created: 15
+2026-02-16 20:54:40,960 - topology_builder - INFO - Built 174 edges for 2 atoms
+2026-02-16 20:54:40,971 - topology_builder - INFO - Edges built: 174
+2026-02-16 20:54:48,252 - topology_builder - INFO - Created 15 clusters
+2026-02-16 20:54:48,380 - topology_builder - INFO - Clusters created: 15
+2026-02-16 21:54:55,932 - topology_builder - INFO - Edges built: 0
+2026-02-16 21:55:06,908 - topology_builder - INFO - Created 15 clusters
+2026-02-16 21:55:06,973 - topology_builder - INFO - Clusters created: 15
+2026-02-16 22:55:07,095 - topology_builder - INFO - Edges built: 0
+2026-02-16 22:55:10,117 - topology_builder - INFO - Created 15 clusters
+2026-02-16 22:55:10,168 - topology_builder - INFO - Clusters created: 15
+2026-02-17 20:52:35,612 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-17 20:52:38,263 - topology_builder - INFO - Edges built: 0
+2026-02-17 20:52:57,705 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-17 20:52:57,706 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-17 20:53:00,708 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-17 20:53:01,437 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-17 20:53:08,993 - topology_builder - INFO - Created 15 clusters
+2026-02-17 20:53:09,059 - topology_builder - INFO - Clusters created: 15
+2026-02-17 21:54:13,395 - topology_builder - INFO - Built 51227 edges for 44 atoms
+2026-02-17 21:54:13,405 - topology_builder - INFO - Edges built: 51227
+2026-02-17 21:54:20,892 - topology_builder - INFO - Created 15 clusters
+2026-02-17 21:54:20,989 - topology_builder - INFO - Clusters created: 15
+2026-02-17 22:54:24,007 - topology_builder - INFO - Edges built: 0
+2026-02-17 22:54:29,090 - topology_builder - INFO - Created 15 clusters
+2026-02-17 22:54:29,168 - topology_builder - INFO - Clusters created: 15
+2026-02-17 23:55:29,092 - topology_builder - INFO - Edges built: 0
+2026-02-17 23:55:33,400 - topology_builder - INFO - Created 15 clusters
+2026-02-17 23:55:33,459 - topology_builder - INFO - Clusters created: 15
+2026-02-18 00:55:36,123 - topology_builder - INFO - Edges built: 0
+2026-02-18 00:55:40,372 - topology_builder - INFO - Created 15 clusters
+2026-02-18 00:55:40,429 - topology_builder - INFO - Clusters created: 15
+2026-02-18 12:56:30,790 - topology_builder - INFO - Starting topology builder daemon (interval: 3600s)
+2026-02-18 12:56:33,751 - topology_builder - INFO - Edges built: 0
+2026-02-18 12:56:49,475 - topology_builder - INFO - Use pytorch device_name: cpu
+2026-02-18 12:56:49,476 - topology_builder - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-02-18 12:56:50,157 - topology_builder - WARNING - Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-02-18 12:56:52,083 - topology_builder - INFO - EMBEDDINGS: all-MiniLM-L6-v2 loaded (384-dim, CPU)
+2026-02-18 12:56:57,478 - topology_builder - INFO - Created 15 clusters
+2026-02-18 12:56:57,543 - topology_builder - INFO - Clusters created: 15
+2026-02-18 13:56:57,670 - topology_builder - INFO - Edges built: 0
+2026-02-18 13:57:02,523 - topology_builder - INFO - Created 15 clusters
+2026-02-18 13:57:02,602 - topology_builder - INFO - Clusters created: 15
+2026-02-18 14:57:06,569 - topology_builder - INFO - Edges built: 0
+2026-02-18 14:57:12,264 - topology_builder - INFO - Created 15 clusters
+2026-02-18 14:57:12,341 - topology_builder - INFO - Clusters created: 15
+2026-02-18 15:57:12,493 - topology_builder - INFO - Edges built: 0
+2026-02-18 15:57:17,478 - topology_builder - INFO - Created 15 clusters
+2026-02-18 15:57:17,540 - topology_builder - INFO - Clusters created: 15
+2026-02-18 16:57:19,872 - topology_builder - INFO - Edges built: 0
+2026-02-18 16:57:23,148 - topology_builder - INFO - Created 15 clusters
+2026-02-18 16:57:23,197 - topology_builder - INFO - Clusters created: 15
+2026-02-18 17:57:25,422 - topology_builder - INFO - Edges built: 0
+2026-02-18 17:57:28,880 - topology_builder - INFO - Created 15 clusters
+2026-02-18 17:57:28,924 - topology_builder - INFO - Clusters created: 15
+2026-02-18 18:57:31,297 - topology_builder - INFO - Edges built: 0
+2026-02-18 18:57:35,407 - topology_builder - INFO - Created 15 clusters
+2026-02-18 18:57:35,459 - topology_builder - INFO - Clusters created: 15
+2026-02-18 19:57:37,703 - topology_builder - INFO - Edges built: 0
+2026-02-18 19:57:40,903 - topology_builder - INFO - Created 15 clusters
+2026-02-18 19:57:40,947 - topology_builder - INFO - Clusters created: 15
+2026-02-18 20:57:43,627 - topology_builder - INFO - Edges built: 0
+2026-02-18 20:57:47,389 - topology_builder - INFO - Created 15 clusters
+2026-02-18 20:57:47,436 - topology_builder - INFO - Clusters created: 15
+2026-02-18 21:57:49,494 - topology_builder - INFO - Edges built: 0
+2026-02-18 21:57:52,489 - topology_builder - INFO - Created 15 clusters
+2026-02-18 21:57:52,536 - topology_builder - INFO - Clusters created: 15
+2026-02-18 22:57:54,437 - topology_builder - INFO - Edges built: 0
+2026-02-18 22:57:57,127 - topology_builder - INFO - Created 15 clusters
+2026-02-18 22:57:57,172 - topology_builder - INFO - Clusters created: 15
+2026-02-18 23:57:59,347 - topology_builder - INFO - Edges built: 0
+2026-02-18 23:58:02,032 - topology_builder - INFO - Created 15 clusters
+2026-02-18 23:58:02,075 - topology_builder - INFO - Clusters created: 15
+2026-02-19 00:58:04,157 - topology_builder - INFO - Built 0 edges for 1 atoms
+2026-02-19 00:58:04,163 - topology_builder - INFO - Edges built: 0
+2026-02-19 00:58:10,063 - topology_builder - INFO - Created 15 clusters
+2026-02-19 00:58:10,117 - topology_builder - INFO - Clusters created: 15
+2026-02-19 01:58:11,204 - topology_builder - INFO - Built 0 edges for 1 atoms
+2026-02-19 01:58:11,206 - topology_builder - INFO - Edges built: 0
+2026-02-19 01:58:14,382 - topology_builder - INFO - Created 15 clusters
+2026-02-19 01:58:14,433 - topology_builder - INFO - Clusters created: 15

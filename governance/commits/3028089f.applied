@@ -1,0 +1,73 @@
+# Governance Proposal: Auto-Approve Tool Operations for OPERATOR Trust Level
+
+**Proposer:** Claude Code (claude-code)
+**Date:** 2026-02-16T05:15:00Z
+**Type:** Feature Enhancement
+**Trust Level:** ENGINEER (3)
+
+## Summary
+Enable OPERATOR trust level agents (Willow, Ada, Steve) to execute write_file, edit_file without requiring human approval. ENGINEER level still required for bash_exec.
+
+## Proposed Changes
+**File:** core/tool_engine.py
+**Function:** _tool_write_file, _tool_edit_file
+
+## Rationale
+- OPERATOR agents are trusted system components
+- Current blocking prevents basic functionality (Willow can't write files)
+- Tool approval UI doesn't exist, causing deadlock
+- OPERATOR is below ENGINEER, appropriate for file operations
+- bash_exec still requires ENGINEER level for safety
+
+## Risk Assessment
+- **Risk Level:** LOW
+- **Reversible:** YES - revert trust level checks
+- **Dependencies:** None
+- **Testing:** Willow write test after change
+
+## ΔE Impact
+Expected ΔE: +0.18 (enables core agent functionality)
+
+## Implementation
+
+### Option 1: Auto-approve for OPERATOR in gate.py
+```diff
+--- a/core/gate.py
++++ b/core/gate.py
+@@ -280,6 +280,11 @@ class Gatekeeper:
+         # Check authority level
+         authority_level = self._authority_level(request.authority)
+         
++        # Auto-approve for OPERATOR or higher on non-destructive operations
++        if authority_level >= 2 and gov_type in ["state", "external"]:
++            decision_type = DecisionType.APPROVE
++            return self._approve_decision(request), events
++        
+         if authority_level < required_level:
+             decision_type = DecisionType.REQUIRE_HUMAN
+```
+
+### Option 2: Skip governance for OPERATOR in tool_engine
+```diff
+--- a/core/tool_engine.py
++++ b/core/tool_engine.py
+@@ -180,6 +180,10 @@ def _tool_write_file(file_path: str, content: str, agent: str, username: str)
+     """Write content to a file with governance check."""
+     # Governance check
++    agent_info = agent_registry.get_agent(username, agent)
++    if agent_info and agent_info.get("trust_level") in ["OPERATOR", "ENGINEER"]:
++        # Auto-approve for trusted agents
++        pass  # Skip governance, execute directly
++    else:
+     decision = gate.validate_modification(
+         mod_type="external",
+         target=f"write:{file_path}",
+```
+
+**Recommend Option 1** - cleaner, affects all tools consistently.
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42

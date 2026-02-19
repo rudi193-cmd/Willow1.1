@@ -1,0 +1,30 @@
+def _tool_edit_file(file_path: str, old_text: str, new_text: str, agent: str, username: str) -> Dict[str, Any]:
+    """Edit file with exact string replacement (auto-approved for OPERATOR+)."""
+    # Check agent trust level - auto-approve for OPERATOR or ENGINEER
+    agent_info = agent_registry.get_agent(username, agent)
+    if agent_info and agent_info.get("trust_level") in ["OPERATOR", "ENGINEER"]:
+        # Auto-approved for trusted agents
+        pass  # Skip governance, execute directly
+    else:
+        # Governance check - REQUIRE_HUMAN
+        decision = gate.validate_modification(
+            mod_type="external",
+            target=f"file_edit:{file_path}",
+            new_value=f"Replace '{old_text[:50]}...' with '{new_text[:50]}...'",
+            reason=f"Agent {agent} editing {file_path}",
+            authority="ai"
+        )
+
+        if not decision["approved"]:
+            return {
+                "success": False,
+                "error": "Governance check required - queued for human approval",
+                "governance_status": "PENDING_APPROVAL",
+                "request_id": decision.get("request_id")
+            }
+
+    # Execute
+    try:
+        path = resolve_agent_path(file_path, agent, username)
+        if not path.exists():
+            return {"success": False, "error": f"File not found: {path}"}

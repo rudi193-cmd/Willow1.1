@@ -1,0 +1,107 @@
+# Governance Proposal: Database Integration for Authentication System
+
+**Proposer:** Claude Code (claude-code)
+**Date:** 2026-02-16T03:10:00Z
+**Type:** Code Enhancement
+**Trust Level:** ENGINEER (3)
+
+## Summary
+Replace in-memory user storage with SQLite database persistence in authentication system. Users now persist across server restarts with data stored in data/auth_users.db.
+
+## Proposed Changes
+**File:** temp/auth_endpoints.py
+**Location:** Database Placeholder section (lines 56-81 in original)
+
+## Rationale
+- Persistent user authentication required for production SAFE deployment
+- Database enables multi-session user management
+- Follows existing pattern from cost_tracker.py (SQLite with data/ directory)
+- Maintains backward-compatible function signatures
+- Users requested this as task #1 after auth endpoints deployed
+
+## Risk Assessment
+- **Risk Level:** LOW
+- **Reversible:** YES - git revert or restore in-memory _users_db
+- **Dependencies:** None (sqlite3 is stdlib)
+- **Testing:** Standalone DB functions tested, users persist successfully
+
+## ΔE Impact
+Expected ΔE: +0.15 (adds persistence layer, foundation for session tracking)
+
+## Implementation
+```diff
+--- a/temp/auth_endpoints.py
++++ b/temp/auth_endpoints.py
+@@ -56,24 +56,68 @@
+ 
+ # ============================================================================
+-# Database Placeholder
+-# TODO: Replace with actual database integration
++# Database Storage (SQLite)
+ # ============================================================================
+ 
+-# Temporary in-memory storage - REPLACE IN PRODUCTION
+-_users_db = {}
++import sqlite3
++
++DB_PATH = os.path.join("data", "auth_users.db")
++
++def init_db():
++    """Initialize auth database and create users table"""
++    os.makedirs("data", exist_ok=True)
++    conn = sqlite3.connect(DB_PATH)
++    conn.execute("""
++        CREATE TABLE IF NOT EXISTS users (
++            username TEXT PRIMARY KEY,
++            password_hash TEXT NOT NULL,
++            user_type TEXT NOT NULL,
++            created_at TEXT NOT NULL
++        )
++    """)
++    conn.commit()
++    conn.close()
+ 
+ def get_user_from_db(username: str) -> Optional[dict]:
+     """Retrieve user from database"""
+-    # TODO: Replace with actual database query
+-    return _users_db.get(username)
++    try:
++        conn = sqlite3.connect(DB_PATH)
++        cursor = conn.execute(
++            "SELECT username, password_hash, user_type, created_at FROM users WHERE username = ?",
++            (username,)
++        )
++        row = cursor.fetchone()
++        conn.close()
++        if row:
++            return {"username": row[0], "password": row[1], "user_type": row[2], "created_at": row[3]}
++        return None
++    except sqlite3.Error:
++        return None
+ 
+ def save_user_to_db(username: str, hashed_password: str, user_type: str) -> bool:
+     """Save user to database"""
+-    # TODO: Replace with actual database insert
+-    _users_db[username] = {"username": username, "password": hashed_password, "user_type": user_type}
+-    return True
++    try:
++        conn = sqlite3.connect(DB_PATH)
++        conn.execute(
++            "INSERT INTO users (username, password_hash, user_type, created_at) VALUES (?, ?, ?, ?)",
++            (username, hashed_password, user_type, datetime.utcnow().isoformat())
++        )
++        conn.commit()
++        conn.close()
++        return True
++    except (sqlite3.IntegrityError, sqlite3.Error):
++        return False
++
++# Initialize database on module import
++init_db()
+```
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42

@@ -1,0 +1,83 @@
+# Governance Proposal: Add Provider Count Helper
+
+**Proposer:** Kart (Kartikeya)
+**Date:** 2026-02-06T19:15:00Z
+**Type:** Code Enhancement
+**Trust Level:** ENGINEER (3)
+
+## Summary
+
+Add a simple helper function to `llm_router.py` that returns the count of available providers by tier. This will be useful for monitoring and debugging.
+
+## Proposed Changes
+
+**File:** `core/llm_router.py`
+**Location:** After line 118 (after `get_available_providers()`)
+
+```python
+def get_provider_count() -> Dict[str, int]:
+    """
+    Get count of available providers by tier.
+    Returns: {"free": N, "cheap": N, "paid": N, "total": N}
+    """
+    avail = get_available_providers()
+    return {
+        "free": len(avail["free"]),
+        "cheap": len(avail["cheap"]),
+        "paid": len(avail["paid"]),
+        "total": sum(len(v) for v in avail.values())
+    }
+```
+
+## Rationale
+
+- Currently no easy way to get provider counts programmatically
+- Useful for health monitoring and status endpoints
+- Simple, pure function with no side effects
+- Returns structured data for API consumption
+
+## Risk Assessment
+
+- **Risk Level:** MINIMAL
+- **Reversible:** Yes, can delete function if not needed
+- **Dependencies:** None, uses existing `get_available_providers()`
+- **Testing:** Can test immediately after approval
+
+## ΔE Impact
+
+Expected ΔE: +0.003 (tiny increase - one small utility function)
+
+## Implementation
+
+```diff
+--- a/core/llm_router.py
++++ b/core/llm_router.py
+@@ -118,6 +118,18 @@ def get_available_providers() -> Dict[str, List[ProviderConfig]]:
+     return available
+
++def get_provider_count() -> Dict[str, int]:
++    """
++    Get count of available providers by tier.
++    Returns: {"free": N, "cheap": N, "paid": N, "total": N}
++    """
++    avail = get_available_providers()
++    return {
++        "free": len(avail["free"]),
++        "cheap": len(avail["cheap"]),
++        "paid": len(avail["paid"]),
++        "total": sum(len(v) for v in avail.values())
++    }
++
+ def ask(prompt: str, preferred_tier: str = "free") -> Optional[RouterResponse]:
+     """
+     Route the prompt to the best available provider.
+```
+
+---
+
+**Awaiting Human Ratification**
+
+To approve: `POST /api/governance/approve {"commit_id": "kart_test_2026-02-06_19-15"}`
+To reject: `POST /api/governance/reject {"commit_id": "kart_test_2026-02-06_19-15", "reason": "..."}`
+
+ΔΣ=42
