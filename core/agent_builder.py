@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Agent Builder — Willow AI OS
+Agent Builder ï¿½ Willow AI OS
 
 Builds new Willow agents from a domain description.
 Fleet writes the profile. AgentBuilder orchestrates.
@@ -20,6 +20,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core import llm_router, agent_registry
 from core.hook_generator import ClaudeCLIHookGenerator
+from governance.precedent import check_precedent, NEIGHBOR_LEDGERS
+from governance import proposal as gov_proposal
 
 ARTIFACTS_BASE = Path(__file__).parent.parent / "artifacts"
 
@@ -88,7 +90,7 @@ Output ONLY the Markdown, no explanation."""
 
     response = llm_router.ask(profile_prompt, preferred_tier="free")
     if not response:
-        return {"success": False, "error": "Fleet unavailable — all providers failed"}
+        return {"success": False, "error": "Fleet unavailable ï¿½ all providers failed"}
 
     profile_content = response.content
     provider = response.provider
@@ -113,6 +115,52 @@ Output ONLY the Markdown, no explanation."""
     (agent_dir / "builder_meta.json").write_text(
         json.dumps(meta, indent=2), encoding="utf-8"
     )
+
+    # --- Precedent check before registration (KL97N) ---
+
+    precedent = check_precedent(
+
+        proposal_type="Agent Registration",
+
+        trust_level=trust_level,
+
+        summary=f"{role} | domain: {domain}",
+
+        proposer="agent_builder",
+
+        neighbor_ledgers=NEIGHBOR_LEDGERS,
+
+    )
+
+    if precedent["decision"] == "HALT":
+
+        cid = gov_proposal.create_proposal(
+
+            title=f"Register agent: {name}",
+
+            proposer="agent_builder",
+
+            summary=f"New agent for domain '{domain}'. Role: {role}. Trust: {trust_level}.",
+
+            file_path=f"artifacts/{name}/AGENT_PROFILE.md",
+
+            diff="--- /dev/null",
+
+            proposal_type="Agent Registration",
+
+            trust_level=trust_level,
+
+        )
+
+        print(f"  [HALT] No precedent. Proposal: {cid}.pending")
+
+        return {"name": name, "success": False,
+
+                "status": "PENDING_RATIFICATION", "commit_id": cid}
+
+    print(f"  [{precedent['decision']}] Precedent: {precedent['matched_commit']} ({precedent['confidence']:.0%})")
+
+
 
     agent_registry.register_agent(
         username=username,
@@ -158,3 +206,40 @@ def list_built_agents() -> list:
 
 
 def main():
+    parser = argparse.ArgumentParser(description='Build a Willow agent from a domain description')
+    parser.add_argument('--list', action='store_true', help='List agents built by agent_builder')
+    parser.add_argument('domain', nargs='?', help='Domain name')
+    parser.add_argument('role', nargs='?', help='Agent role description')
+    parser.add_argument('trust_level', nargs='?', default='WORKER', help='Trust level')
+    parser.add_argument('agent_type', nargs='?', default='fleet', help='Agent type')
+    args = parser.parse_args()
+
+    if args.list:
+        agents = list_built_agents()
+        if not agents:
+            print('No agents built yet.')
+        for a in agents:
+            print(f"  {a['name']} | {a['trust_level']} | {a['domain']} | {a['provider']}")
+        return
+
+    if not args.domain or not args.role:
+        parser.print_help()
+        return
+
+    result = build_agent(
+        username='Sweet-Pea-Rudi19',
+        domain=args.domain,
+        role=args.role,
+        trust_level=args.trust_level,
+        agent_type=args.agent_type,
+    )
+    if result.get('success'):
+        print(f"[OK] Built: {result['name']} via {result['provider']}")
+        print(f"  Profile: {result['profile_path']}")
+        print(f"  Hooks:   {result['hooks']}")
+    else:
+        print(f"[{result.get('status', 'FAIL')}] {result.get('error') or result.get('commit_id', '')}")
+
+
+if __name__ == '__main__':
+    main()
