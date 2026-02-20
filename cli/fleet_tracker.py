@@ -24,6 +24,37 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 
+# ── Hook generator integration ─────────────────────────────────────────────────
+# Import SAFE OS hook generator so fleet events become observable system events
+WILLOW_CORE = Path(__file__).parent.parent / "core"
+sys.path.insert(0, str(WILLOW_CORE))
+try:
+    from hook_generator import ClaudeCLIHookGenerator
+    _hook_gen = ClaudeCLIHookGenerator()
+    _hook_gen.generate_domain_hooks("FleetProvider")
+    # Additional fleet-specific hooks beyond the 3 defaults
+    _hook_gen.add_hook("FleetProvider blacklisted",    "Preservation", "A fleet provider has been auto-blacklisted due to consecutive failures.", domain_tag="FleetProvider", priority=9)
+    _hook_gen.add_hook("FleetProvider recovered",      "Preservation", "A blacklisted fleet provider has been reset and is healthy again.",        domain_tag="FleetProvider", priority=7)
+    _hook_gen.add_hook("FleetProvider degraded",       "Verification", "A fleet provider is failing but not yet blacklisted — needs monitoring.",  domain_tag="FleetProvider", priority=8)
+    _hook_gen.add_hook("FleetProvider probe complete", "Preservation", "A full fleet probe has run and results are recorded.",                      domain_tag="FleetProvider", priority=3)
+    _hook_gen.add_hook("FleetProvider capability updated", "Reflexive", "Learned capability matrix has been updated from real usage data.",         domain_tag="FleetProvider", priority=4)
+    _hook_gen.add_hook("FleetProvider human reset",    "Verification", "A human manually reset a provider's blacklist status.",                     domain_tag="FleetProvider", priority=6)
+    HOOKS_AVAILABLE = True
+except ImportError:
+    HOOKS_AVAILABLE = False
+    _hook_gen = None
+
+
+def _fire_hook(hook_name: str, detail: str = ""):
+    """Fire a named hook event — logs it and prints to console."""
+    if not HOOKS_AVAILABLE or _hook_gen is None:
+        return
+    matching = [h for h in _hook_gen.hooks if h.name == hook_name]
+    if matching:
+        h = matching[0]
+        ts = datetime.now().strftime("%H:%M:%S")
+        print(f"  [HOOK:{h.tier[:4].upper()}] {hook_name}{': ' + detail if detail else ''}")
+
 # ── Fixed paths ────────────────────────────────────────────────────────────────
 WILLOW_ROOT = Path(__file__).parent.parent
 CREDS_PATH = Path(r"C:\Users\Sean\Desktop\credentials.json")
@@ -220,6 +251,10 @@ def record_probe(name: str, result: dict):
                 updated_at = excluded.updated_at
         """, (name, now, result["latency_ms"] or 0, now))
     elif result["status"] in ("error", "timeout"):
+        # Check current failure count before writing (to detect threshold crossing)
+        row = conn.execute("SELECT consecutive_failures FROM provider_health WHERE provider=?", (name,)).fetchone()
+        prev_failures = row[0] if row else 0
+
         conn.execute("""
             INSERT INTO provider_health (provider, status, consecutive_failures, last_failure,
                 total_requests, total_failures, updated_at)
@@ -232,6 +267,14 @@ def record_probe(name: str, result: dict):
                 total_failures = total_failures + 1,
                 updated_at = excluded.updated_at
         """, (name, now, now))
+        conn.commit()
+
+        # Fire hooks at threshold crossings
+        if prev_failures + 1 >= 5:
+            _fire_hook("FleetProvider blacklisted", f"{name} — {result['snippet']}")
+        elif prev_failures + 1 == 3:
+            _fire_hook("FleetProvider degraded", f"{name} — {prev_failures + 1} consecutive failures")
+
     conn.commit()
     conn.close()
 
@@ -310,6 +353,7 @@ def cmd_probe():
     print(f"\n  {'='*68}")
     print(f"  Result: {ok_count} OK  |  {fail_count} failed  |  {no_key_count} no key")
     print(f"  OCI + Ollama: skipped (complex auth — check separately)")
+    _fire_hook("FleetProvider probe complete", f"{ok_count} OK, {fail_count} failed, {no_key_count} no key")
     print(f"  {'='*68}\n")
 
 
@@ -352,6 +396,9 @@ def cmd_learn():
         print(f"  {prefix}{cat:<24} {row['provider']:<22} {rate:>6.1f}%   {avg:>5}ms   {row['samples']}")
 
     print(f"\n  * = currently preferred for this task type")
+    if seen_categories:
+        _fire_hook("FleetProvider capability updated",
+                   f"{len(seen_categories)} task types learned across {len(rows)} provider/category pairs")
     print(f"{'='*72}\n")
 
 
@@ -367,6 +414,8 @@ def cmd_reset(provider_name: str):
     conn.commit()
     conn.close()
     if changed:
+        _fire_hook("FleetProvider human reset", provider_name)
+        _fire_hook("FleetProvider recovered", f"{provider_name} — manually cleared by operator")
         print(f"[OK] Reset: {provider_name}")
     else:
         print(f"[!]  Not found: {provider_name}  (run `status` to see provider names)")
