@@ -1,0 +1,13 @@
+title: SAFE OS
+description: Community Memory Sovereignty in the Age of AI
+theme: minima
+url: "https://rudi193-cmd.github.io"
+baseurl: "/Willow1.1"
+
+author:
+  name: Sean Campbell
+
+show_excerpts: false
+
+minima:
+  skin: classic
