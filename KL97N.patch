@@ -1,0 +1,41 @@
+--- a/core/agent_builder.py
++++ b/core/agent_builder.py
+@@ -21,6 +21,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
+ from core import llm_router, agent_registry
+ from core.hook_generator import ClaudeCLIHookGenerator
++from governance.precedent import check_precedent, NEIGHBOR_LEDGERS
++from governance import proposal as gov_proposal
+ 
+ ARTIFACTS_BASE = Path(__file__).parent.parent / "artifacts"
+ 
+@@ -114,6 +116,22 @@ def build_agent(username: str, domain: str, role: str,
+         json.dumps(meta, indent=2), encoding="utf-8"
+     )
+ 
++    # --- Precedent check before registration ---
++    precedent = check_precedent(
++        proposal_type="Agent Registration",
++        trust_level=trust_level,
++        summary=f"{role} | domain: {domain}",
++        proposer="agent_builder",
++        neighbor_ledgers=NEIGHBOR_LEDGERS,
++    )
++    if precedent["decision"] == "HALT":
++        cid = gov_proposal.create_proposal(
++            title=f"Register agent: {name}",
++            proposer="agent_builder",
++            summary=f"New agent built for domain '{domain}'. Role: {role}. Trust: {trust_level}.",
++            file_path=f"artifacts/{name}/AGENT_PROFILE.md",
++            diff=f"--- /dev/null
++++ b/artifacts/{name}/AGENT_PROFILE.md
+@@ -0,0 +1 @@
++[see profile]",
++            proposal_type="Agent Registration",
++            trust_level=trust_level,
++        )
++        print(f"  [HALT] No precedent. Proposal written: {cid}.pending")
++        return {"name": name, "success": False,
++                "status": "PENDING_RATIFICATION", "commit_id": cid}
++    print(f"  [{precedent['decision']}] Precedent: {precedent['matched_commit']} ({precedent['confidence']:.0%})")
++
+     agent_registry.register_agent(
