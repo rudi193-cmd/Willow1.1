@@ -1,0 +1,137 @@
+# Governance Proposal: Wire Task Database to Kart Orchestrator
+
+**Proposer:** Claude Code (claude-code)
+**Date:** 2026-02-13T15:45:00Z
+**Type:** Code Enhancement
+**Trust Level:** ENGINEER (3)
+
+## Summary
+Connect kart_tasks.py database to kart_orchestrator.py so task execution is tracked in persistent storage. Currently, the orchestrator tracks steps in memory and SEED_PACKETs but never writes to kart_tasks.db, leaving it empty despite having a complete implementation.
+
+## Proposed Changes
+
+**File:** core/kart_orchestrator.py
+
+**Changes:**
+1. Import kart_tasks module (line 19)
+2. Add task_id tracking to orchestrator instance (line 54)
+3. Create task entry at start of execute() (after line 86)
+4. Update task status on completion/failure (lines 98, 157, 164, 172)
+
+## Rationale
+- kart_tasks.py provides complete task database implementation (create, update, list, delete)
+- tool_engine.py exposes task_create, task_update, task_list tools to agents
+- kart_orchestrator.py never calls these tools or uses the database
+- Result: kart_tasks.db remains empty, no persistent task history
+- User confirmed: "Each folder should have it's own db for willow to ref. even the kart_tasks.db. Which I'm not sure why that one isn't wired up."
+
+**Root cause discovered:**
+- Agent registry tables were missing → tool_engine.execute() failed with "Unknown agent"
+- Agents could see tools via list_tools() but couldn't use them
+- Fixed by initializing agent registry and registering 8 agents
+- Now tools work, but orchestrator still doesn't create task records
+
+## Risk Assessment
+- **Risk Level:** LOW
+- **Reversible:** YES - changes are additive, don't break existing SEED_PACKET flow
+- **Dependencies:** Requires kart_tasks.py and agent_registry.py (both exist and working)
+- **Testing:**
+  1. Run Kart task via CLI
+  2. Verify kart_tasks.db receives entry
+  3. Check task updates as execution progresses
+  4. Confirm SEED_PACKET continuity still works
+
+## ΔE Impact
+Expected ΔE: +0.08 (adds persistent task tracking, improves system observability)
+
+## Implementation
+
+```diff
+--- a/core/kart_orchestrator.py
++++ b/core/kart_orchestrator.py
+@@ -16,7 +16,7 @@ from typing import List, Dict, Optional, Any
+
+ # Core imports
+-from core import llm_router, tool_engine, agent_registry
++from core import llm_router, tool_engine, agent_registry, kart_tasks
+ from core.delta_tracker import DeltaTracker
+ from core.seed_packet import save_packet, load_packet, validate_packet
+
+@@ -51,6 +51,9 @@ class KartOrchestrator:
+         # Delta tracking for SEED_PACKET continuity
+         self.delta_tracker = DeltaTracker(username)
+         self.previous_state = None
++
++        # Task tracking
++        self.task_id = None
+
+     def execute(self, user_request: str, load_seed_packet: Optional[str] = None) -> Dict[str, Any]:
+         """
+@@ -83,6 +86,15 @@ class KartOrchestrator:
+             }]
+
+         steps_executed = []
++
++        # Create task record in database
++        try:
++            self.task_id = kart_tasks.create_task(
++                self.username,
++                subject=f"Execute: {user_request[:50]}",
++                description=user_request,
++                agent=self.agent_name
++            )
++        except Exception as e:
++            # Continue without task tracking if DB fails
++            self.task_id = None
+         total_steps = 0
+
+         # Multi-step execution loop
+@@ -93,6 +105,11 @@ class KartOrchestrator:
+
+             if action["type"] == "complete":
+                 # Task is done
++                if self.task_id:
++                    try:
++                        kart_tasks.update_task(self.username, self.task_id, "COMPLETED", self.agent_name)
++                    except:
++                        pass
+                 return {
+                     "success": True,
+                     "result": action["response"],
+@@ -150,6 +167,11 @@ class KartOrchestrator:
+
+             elif action["type"] == "error":
+                 # LLM error
++                if self.task_id:
++                    try:
++                        kart_tasks.update_task(self.username, self.task_id, "FAILED", self.agent_name)
++                    except:
++                        pass
+                 return {
+                     "success": False,
+                     "result": action["message"],
+@@ -158,6 +180,11 @@ class KartOrchestrator:
+                 }
+
+         # Max steps reached
++        if self.task_id:
++            try:
++                kart_tasks.update_task(self.username, self.task_id, "FAILED", self.agent_name)
++            except:
++                pass
+         seed_path = self._save_seed_packet(user_request, steps_executed, "HALTED")
+         return {
+             "success": False,
+```
+
+## Notes
+- Uses try/except around task DB calls to ensure execution continues even if DB fails
+- Preserves existing SEED_PACKET continuity system (both systems work in parallel)
+- Task database provides queryable history, SEED_PACKET provides resumption context
+- Future enhancement: Add task_update() calls after each step for real-time progress tracking
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42

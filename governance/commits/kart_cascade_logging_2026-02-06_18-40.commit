@@ -1,0 +1,99 @@
+# Governance Proposal: Improve LLM Router Cascade Logging
+
+**Proposer:** Kart (Kartikeya)
+**Date:** 2026-02-06T18:40:00Z
+**Type:** Bug Fix / Logging Enhancement
+**Trust Level:** ENGINEER (3)
+
+## Summary
+
+Add verbose logging to LLM router cascade to make provider failures and fallback behavior visible. User reported Groq 429 errors with unclear cascade behavior.
+
+## Proposed Changes
+
+**File:** `core/llm_router.py`
+
+Three logging improvements:
+1. Log each provider attempt before trying it
+2. Log successful responses
+3. Log when ALL providers fail
+
+## Rationale
+
+- User reported "running into a 429 on groq, and it's not moving to the next api"
+- Current logging doesn't show cascade attempts clearly
+- Hard to debug when cascade is working vs. when all providers fail
+- Improves observability for rate limit issues
+
+## Risk Assessment
+
+- **Risk Level:** MINIMAL
+- **Reversible:** YES (just logging, no logic changes)
+- **Dependencies:** None
+- **Testing:** Tested locally - logging works correctly
+
+## ΔE Impact
+
+Expected ΔE: +0.001 (logging only, no behavior change)
+
+## Implementation
+
+```diff
+--- a/core/llm_router.py
++++ b/core/llm_router.py
+@@ -156,6 +156,7 @@ def ask(prompt: str, preferred_tier: str = "free") -> Optional[RouterResponse]:
+
+     # Try providers in order
+     for provider in priority:
++        logging.info(f"[LLM Router] Trying {provider.name} (tier: {provider.tier})...")
+         try:
+             # --- ORACLE OCI ADAPTER ---
+             if provider.name == "Oracle OCI":
+@@ -223,9 +224,10 @@ def ask(prompt: str, preferred_tier: str = "free") -> Optional[RouterResponse]:
+
+                 resp = requests.post(provider.base_url, json=payload, headers=headers, timeout=30)
+                 if resp.status_code == 200:
++                    logging.info(f"[LLM Router] SUCCESS: {provider.name} responded")
+                     return RouterResponse(resp.json()['choices'][0]['message']['content'], provider.name, provider.tier)
+                 elif resp.status_code == 429:
+-                    logging.warning(f"Provider {provider.name} quota exceeded (429) — trying next")
++                    logging.warning(f"[LLM Router] {provider.name} quota exceeded (429) — cascading to next provider")
+                     continue
+                 else:
+                     body = resp.text[:200] if resp.text else "no body"
+@@ -289,8 +291,9 @@ def ask(prompt: str, preferred_tier: str = "free") -> Optional[RouterResponse]:
+                     continue
+
+         except Exception as e:
+-            logging.warning(f"Provider {provider.name} failed: {e}")
++            logging.warning(f"[LLM Router] {provider.name} failed with exception: {e} — trying next")
+             continue
+
++    logging.error(f"[LLM Router] ALL providers failed or unavailable. Tried {len(priority)} provider(s)")
+     return None
+```
+
+## Example Output
+
+```
+[LLM Router] Trying Groq (tier: free)...
+[LLM Router] Groq quota exceeded (429) — cascading to next provider
+[LLM Router] Trying Cerebras (tier: free)...
+[LLM Router] SUCCESS: Cerebras responded
+```
+
+Or if all fail:
+```
+[LLM Router] Trying Groq (tier: free)...
+[LLM Router] Groq quota exceeded (429) — cascading to next provider
+[LLM Router] Trying Cerebras (tier: free)...
+[LLM Router] Cerebras quota exceeded (429) — cascading to next provider
+...
+[LLM Router] ALL providers failed or unavailable. Tried 10 provider(s)
+```
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42

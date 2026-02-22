@@ -1,0 +1,281 @@
+# Governance Proposal: Add delegate_to_agent Tool
+
+**Proposer:** Claude Code (Anthropic Claude Sonnet 4.5)
+**Date:** 2026-02-13T19:45:00Z
+**Type:** Feature - Core Tool Addition
+**Trust Level:** ENGINEER
+
+## Summary
+Add `delegate_to_agent` as a core tool in tool_engine.py, enabling any LLM user of Willow to delegate tasks to other agents. This creates a universal collaboration primitive for the entire agent ecosystem.
+
+## Proposed Changes
+**File:** core/tool_engine.py
+**Location:** Add new tool executor function and registration
+
+### Changes Required:
+
+1. **Add import at top of file** (after line 22):
+```python
+import requests
+```
+
+2. **Add tool executor function** (before TOOL REGISTRATION section):
+```python
+def _tool_delegate_to_agent(target_agent: str, task: str, agent: str, username: str) -> Dict[str, Any]:
+    """
+    Delegate a task to another agent via conversational chat API.
+
+    This enables any LLM to offload work to specialized agents:
+    - Claude Code → Kart (code analysis, file operations)
+    - Willow → Kart (complex routing decisions)
+    - Any agent → Jane (SAFE-compliant responses)
+    - Cross-agent collaboration patterns
+
+    Args:
+        target_agent: Agent to delegate to (kart, willow, jane, etc.)
+        task: Task description to send to target agent
+        agent: Requesting agent name
+        username: User name
+
+    Returns:
+        Response from target agent with tool call results
+    """
+    # Validate target agent exists
+    target_info = agent_registry.get_agent(username, target_agent)
+    if not target_info:
+        return {
+            "success": False,
+            "error": f"Target agent '{target_agent}' not found. Available agents: willow, kart, jane, riggs, ada, gerald, steve"
+        }
+
+    # Call target agent via chat API
+    try:
+        response = requests.post(
+            "http://localhost:8420/api/agents/chat/" + target_agent,
+            json={"message": task},
+            timeout=60
+        )
+
+        if response.status_code == 200:
+            result = response.json()
+
+            # Log the delegation
+            try:
+                knowledge.log_observation(
+                    username=username,
+                    agent=agent,
+                    observation_type="delegation",
+                    content=f"Delegated to {target_agent}: {task[:100]}..."
+                )
+            except:
+                pass
+
+            return {
+                "success": True,
+                "result": {
+                    "response": result.get("response", ""),
+                    "target_agent": target_agent,
+                    "provider": result.get("provider", "unknown"),
+                    "tier": result.get("tier", "unknown"),
+                    "tool_calls": result.get("tool_calls", [])
+                },
+                "governance_status": "APPROVED"
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Agent chat API returned status {response.status_code}: {response.text[:200]}"
+            }
+
+    except requests.exceptions.Timeout:
+        return {
+            "success": False,
+            "error": f"Delegation to {target_agent} timed out after 60 seconds"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Delegation failed: {str(e)}"
+        }
+```
+
+3. **Add tool registration in init_tools()** (after task_list registration, around line 525):
+```python
+    register_tool(ToolDefinition(
+        name="delegate_to_agent",
+        description="Delegate a task to another agent. Use this to offload work to specialized agents (kart for file ops, jane for SAFE responses, etc.)",
+        parameters={"target_agent": "string", "task": "string"},
+        required_trust="WORKER",
+        governance_type="state",
+        executor=_tool_delegate_to_agent
+    ))
+```
+
+## Rationale
+
+**Universal benefit for all LLM users:**
+- **Token optimization** - Any LLM (GPT-4, Claude, Gemini, local models) can delegate to free-tier agents
+- **Specialization** - Route tasks to agents with specific expertise (Kart for infrastructure, Jane for public-safe content)
+- **Collaboration** - Enables multi-agent workflows (Willow → Kart → Riggs coordination)
+- **Discoverability** - Shows up in every agent's tool list automatically
+- **Governance** - All delegations logged for audit trail
+
+**Cost impact:**
+- Reduces paid API usage by enabling delegation to free-tier agents
+- Aligns with $0.10/month/user cost target
+- Maximizes use of 15 free provider fleet
+
+**Example use cases:**
+```python
+# Claude Code analyzing files
+delegate_to_agent(target_agent="kart", task="Read agent_engine.py and explain the tool execution flow")
+
+# Willow routing complex decisions
+delegate_to_agent(target_agent="kart", task="Analyze this screenshot and suggest 3 routing destinations")
+
+# Any LLM getting SAFE-compliant responses
+delegate_to_agent(target_agent="jane", task="Explain this feature in user-friendly terms")
+```
+
+## Risk Assessment
+- **Risk Level:** LOW
+- **Reversible:** YES (can remove tool registration)
+- **Dependencies:**
+  - Requires Willow server running (localhost:8420)
+  - Requires `requests` library (already in requirements)
+  - Target agent must be registered
+- **Testing:**
+  - Test delegation from claude-code → kart
+  - Test delegation from willow → kart
+  - Test error handling (invalid agent, timeout, API down)
+
+## ΔE Impact
+Expected ΔE: +0.008 (new collaboration pathway, significant architectural improvement)
+
+**Positive impacts:**
+- Enables agent specialization and collaboration
+- Reduces redundant LLM calls
+- Creates reusable delegation pattern
+- Foundation for future multi-agent workflows
+
+## Implementation
+
+```diff
+--- a/core/tool_engine.py
++++ b/core/tool_engine.py
+@@ -19,6 +19,7 @@ import subprocess
+ from pathlib import Path
+ from dataclasses import dataclass
+ from typing import Callable, Optional, List, Dict, Any
+ from datetime import datetime
++import requests
+
+ # Core imports
+ from core import agent_registry, gate, knowledge
+@@ -435,6 +436,75 @@ def _tool_task_list(agent: str, username: str) -> Dict[str, Any]:
+         }
+
+
++def _tool_delegate_to_agent(target_agent: str, task: str, agent: str, username: str) -> Dict[str, Any]:
++    """
++    Delegate a task to another agent via conversational chat API.
++
++    This enables any LLM to offload work to specialized agents:
++    - Claude Code → Kart (code analysis, file operations)
++    - Willow → Kart (complex routing decisions)
++    - Any agent → Jane (SAFE-compliant responses)
++    - Cross-agent collaboration patterns
++
++    Args:
++        target_agent: Agent to delegate to (kart, willow, jane, etc.)
++        task: Task description to send to target agent
++        agent: Requesting agent name
++        username: User name
++
++    Returns:
++        Response from target agent with tool call results
++    """
++    # Validate target agent exists
++    target_info = agent_registry.get_agent(username, target_agent)
++    if not target_info:
++        return {
++            "success": False,
++            "error": f"Target agent '{target_agent}' not found. Available agents: willow, kart, jane, riggs, ada, gerald, steve"
++        }
++
++    # Call target agent via chat API
++    try:
++        response = requests.post(
++            "http://localhost:8420/api/agents/chat/" + target_agent,
++            json={"message": task},
++            timeout=60
++        )
++
++        if response.status_code == 200:
++            result = response.json()
++
++            # Log the delegation
++            try:
++                knowledge.log_observation(
++                    username=username,
++                    agent=agent,
++                    observation_type="delegation",
++                    content=f"Delegated to {target_agent}: {task[:100]}..."
++                )
++            except:
++                pass
++
++            return {
++                "success": True,
++                "result": {
++                    "response": result.get("response", ""),
++                    "target_agent": target_agent,
++                    "provider": result.get("provider", "unknown"),
++                    "tier": result.get("tier", "unknown"),
++                    "tool_calls": result.get("tool_calls", [])
++                },
++                "governance_status": "APPROVED"
++            }
++        else:
++            return {
++                "success": False,
++                "error": f"Agent chat API returned status {response.status_code}: {response.text[:200]}"
++            }
++
++    except requests.exceptions.Timeout:
++        return {
++            "success": False,
++            "error": f"Delegation to {target_agent} timed out after 60 seconds"
++        }
++    except Exception as e:
++        return {
++            "success": False,
++            "error": f"Delegation failed: {str(e)}"
++        }
++
++
+ # ============================================================================
+ # TOOL REGISTRATION
+ # ============================================================================
+@@ -524,6 +594,13 @@ def init_tools():
+         executor=_tool_task_list
+     ))
+
++    register_tool(ToolDefinition(
++        name="delegate_to_agent",
++        description="Delegate a task to another agent. Use this to offload work to specialized agents (kart for file ops, jane for SAFE responses, etc.)",
++        parameters={"target_agent": "string", "task": "string"},
++        required_trust="WORKER",
++        governance_type="state",
++        executor=_tool_delegate_to_agent
++    ))
++
+     # Task management (OPERATOR level)
+     register_tool(ToolDefinition(
+```
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42

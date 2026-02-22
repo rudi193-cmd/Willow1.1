@@ -1,0 +1,155 @@
+=== GOVERNANCE PROPOSAL TEMPLATE ===
+# Governance Proposal: Wire Pattern Learning into Routing Logic
+
+**Proposer:** Sweet-Pea-Rudi19
+**Date:** 2026-02-13T00:00:00Z
+**Type:** Feature
+**Trust Level:** ENGINEER (3)
+
+## Summary
+
+This proposal aims to integrate the learning system from `patterns.py` into the routing logic of `smart_routing.py`, allowing Willow to use learned preferences when deciding where to route files.
+
+## Proposed Changes
+
+### Change 1: Add suggest_destinations_for helper function
+**File:** `core/patterns.py`
+**Location:** After line 193 (after `_update_learned_preferences`)
+
+```python
+def suggest_destinations_for(
+    file_type: str,
+    content_summary: Optional[str] = None,
+    default_destinations: Optional[List[str]] = None,
+    min_confidence: float = 0.5
+) -> Dict:
+    """
+    Suggest routing destinations based on learned preferences.
+    
+    Returns dict with:
+        destinations: List[str] - where to route
+        reason: str - "learned_preference" or "default_heuristic"
+        confidence: float - 0.0-1.0
+    """
+    init_db()
+    preferences = get_learned_preferences(min_confidence=min_confidence)
+    
+    for pref in preferences:
+        if pref["pattern_type"] == "file_type_routing" and pref["pattern_value"] == file_type:
+            return {
+                "destinations": [pref["destination"]],
+                "reason": "learned_preference",
+                "confidence": pref["confidence"]
+            }
+    
+    return {
+        "destinations": default_destinations or ["user-profile"],
+        "reason": "default_heuristic",
+        "confidence": 0.3
+    }
+```
+
+### Change 2: Wire into smart_routing.py route_screenshot()
+**File:** `apps/smart_routing.py`
+**Location:** Modify `route_screenshot` function (lines 109-166)
+
+BEFORE:
+```python
+def route_screenshot(
+    filename: str,
+    filepath: str,
+    ocr_text: Optional[str] = None,
+    source_user: str = "Sweet-Pea-Rudi19"
+) -> Dict:
+    """Route a screenshot to multiple destinations based on classification."""
+    classification = classify_screenshot(filename, ocr_text)
+    
+    routed_to = []
+    screenshot_id = None
+    
+    # Route to each destination
+    for dest in classification["destinations"]:
+        # ... routing code ...
+```
+
+AFTER:
+```python
+def route_screenshot(
+    filename: str,
+    filepath: str,
+    ocr_text: Optional[str] = None,
+    source_user: str = "Sweet-Pea-Rudi19"
+) -> Dict:
+    """Route a screenshot using learned preferences + heuristics."""
+    
+    # Import learning system
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent / "core"))
+    from patterns import suggest_destinations_for, log_routing_decision
+    
+    classification = classify_screenshot(filename, ocr_text)
+    file_type = Path(filename).suffix.lower() or ".jpg"
+    
+    # Check learned preferences FIRST
+    suggestion = suggest_destinations_for(
+        file_type=file_type,
+        content_summary=f"Screenshot: {classification['platform']}",
+        default_destinations=classification["destinations"],
+        min_confidence=0.5
+    )
+    
+    # Use learned or default
+    destinations_to_route = suggestion["destinations"] if suggestion["reason"] == "learned_preference" else classification["destinations"]
+    
+    routed_to = []
+    screenshot_id = None
+    
+    # Route to each destination
+    for dest in destinations_to_route:
+        # ... existing routing code stays same ...
+    
+    # LOG THE DECISION (add at end before return)
+    log_routing_decision(
+        filename=filename,
+        file_type=file_type,
+        content_summary=f"{classification['platform']} screenshot",
+        routed_to=routed_to,
+        reason=suggestion["reason"],
+        confidence=suggestion["confidence"]
+    )
+    
+    return {
+        "classification": classification,
+        "routed_to": routed_to,
+        "screenshot_id": screenshot_id
+    }
+```
+
+## Rationale
+
+The routing logic in Willow currently relies solely on heuristics, ignoring the learning system implemented in `patterns.py`. This proposal aims to integrate these two components, allowing Willow to use learned preferences to determine where to route files.
+
+By learning preferences from file types and classifications, we can improve the accuracy and efficiency of the routing process. This is especially important for frequently handled file types, where learned preferences can be applied to speed up processing.
+
+## Risk Assessment
+
+- **Risk Level:** LOW
+- **Reversible:** YES
+- **Dependencies:** None
+- **Testing:**
+
+1. Route 1 screenshot - uses heuristics (no learned preference)
+2. Route 5 more of same type - learns pattern
+3. Route another - should use learned preference
+4. Run: `python core/patterns.py preferences`
+
+## ΔE Impact
+
+Expected ΔE: [-0.15] (reduces routing entropy)
+
+---
+**Awaiting Human Ratification**
+ΔΣ=42
+
+=== END TEMPLATE ===

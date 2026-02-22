@@ -1,0 +1,87 @@
+# Governance Proposal: Add Möbius topology governance documentation
+
+**Proposer:** Free Fleet via Cerebras
+**Date:** 2026-02-13T23:03:30.902853Z
+**Type:** Code Enhancement
+**Trust Level:** ENGINEER
+**Commit ID:** 1613H
+
+## Summary
+**Change Analysis**
+
+This Git diff shows a significant update to the `core/__init__.py` file in the Willow OS project. The changes introduce a new section on Topology Governance, outlining a set of rules and constraints for the MÃ¶bius Strip Topology Layer. This layer is described as observational-o
+
+## Proposed Changes
+**File:** core/__init__.py
+
+## Rationale
+This change implements the requested modification with minimal disruption to existing functionality.
+
+## Risk Assessment
+- **Risk Level:** MEDIUM
+- **Reversible:** YES
+- **Dependencies:** None
+- **Testing:** Manual verification required
+
+## ΔE Impact
+Expected ΔE: +0.05
+
+## Implementation
+```diff
+diff --git a/core/__init__.py b/core/__init__.py
+index ff61364..8db39b8 100644
+--- a/core/__init__.py
++++ b/core/__init__.py
+@@ -1 +1,43 @@
+-# Willow OS Core â€” governance, state, storage, routing, coherence
++# Willow OS Core â€” governance, state, storage, routing, coherence, topology
++#
++# TOPOLOGY GOVERNANCE (Aios Addendum, Consus Ratified â€” v5.1 Compliant)
++# =====================================================================
++#
++# The MÃ¶bius Strip Topology Layer (core/topology.py) is OBSERVATIONAL ONLY.
++# It provides analytical views of the three-ring architecture
++# (Source â†’ Bridge â†’ Continuity â†’ Source). It does not act.
++#
++# Binding Constraints:
++#
++# 1. CANONICAL SEPARATION â€” All topology-derived artifacts (edges, clusters,
++#    derived groupings) carry canonical=0 by default. They are analytical
++#    views, not truth. Only a human may promote an artifact to canonical=1.
++#    Topology output may NOT drive routing, scoring, prioritization, or
++#    governance decisions.
++#
++# 2. READ-ONLY API â€” All /api/topology/* endpoints are inspect-only.
++#    No file movement, no state mutation, no gate invocation, no alteration
++#    of non-topology tables. Topology observes structure; governance decides
++#    action.
++#
++# 3. CLUSTERS ARE EXPLORATORY â€” KMeans output is heuristic, lossy, and
++#    provisional. No cluster labels are truth. No downstream logic may
++#    assume cluster stability. Clusters are lenses, not ontology.
++#
++# 4. HUMAN RING OVERRIDE â€” Derived ring assignment (category + source_type)
++#    is a default, not a destiny. The ring_override field on knowledge atoms
++#    is human-set and protected. get_ring() always checks override first.
++#
++# 5. CONTINUITY CHECKS ARE ADVISORY â€” check_strip_continuity() output is a
++#    signal, not a trigger. Gaps surface review candidates. They must NOT
++#    auto-correct, auto-link, or auto-patch the strip. All remediation
++#    decisions remain human.
++#
++# 6. GOVERNANCE PRESERVATION â€” Nothing in the topology layer may bypass
++#    gate.py, alter Dual Commit semantics, or introduce implicit authority.
++#
++# 7. INTEGRATION MODE â€” Manual approval, incremental rollout, schema first,
++#    behavior second. No auto-accept of edits.
++#
++# The topology has eyes but no hands.
++# CHECKSUM: Î”Î£=42
+
+```
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42

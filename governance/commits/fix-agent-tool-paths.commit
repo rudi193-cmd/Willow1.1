@@ -1,0 +1,128 @@
+# Governance Proposal: Fix Agent Tool File Paths
+
+**Proposer:** Claude Code (Anthropic Claude Sonnet 4.5)
+**Date:** 2026-02-13T21:10:00Z
+**Type:** Bug Fix - Critical
+**Trust Level:** ENGINEER
+
+## Summary
+Fix tool_engine.py to resolve relative file paths relative to agent Pickup folders, enabling agents to access their files properly.
+
+## Problem
+
+Agents cannot access files in their Pickup folders using relative paths:
+- Kart calls `read_file("INVESTIGATION_TASK.md")`
+- Tool looks in current working directory (Willow root)
+- File actually at: `C:\Users\Sean\My Drive\Willow\Auth Users\kart\Pickup\INVESTIGATION_TASK.md`
+- Result: "File not found" error
+
+**Impact:** Breaks agent file operations, Pickup folder access, agent-to-agent file communication
+
+## Proposed Changes
+
+**File:** core/tool_engine.py
+**Location:** After imports, before ToolDefinition class
+
+### 1. Add Path Resolution Helper (after line 29):
+
+```python
+# Agent file path resolution
+USER_PROFILE_BASE = Path(r"C:\Users\Sean\My Drive\Willow\Auth Users")
+
+def resolve_agent_path(file_path: str, agent: str, username: str) -> Path:
+    """
+    Resolve file path relative to agent's Pickup folder if relative.
+
+    Args:
+        file_path: Path provided by agent (relative or absolute)
+        agent: Agent name (kart, willow, etc.)
+        username: Username (Sweet-Pea-Rudi19)
+
+    Returns:
+        Resolved absolute Path
+    """
+    path = Path(file_path)
+
+    # If already absolute, use as-is
+    if path.is_absolute():
+        return path
+
+    # If relative, resolve to agent's Pickup folder
+    agent_pickup = USER_PROFILE_BASE / agent / "Pickup"
+    resolved = agent_pickup / file_path
+
+    return resolved
+```
+
+### 2. Update _tool_read_file (line 161):
+
+```python
+# OLD:
+path = Path(file_path)
+
+# NEW:
+path = resolve_agent_path(file_path, agent, username)
+```
+
+### 3. Update _tool_write_file (line 217):
+
+```python
+# OLD:
+path = Path(file_path)
+
+# NEW:
+path = resolve_agent_path(file_path, agent, username)
+```
+
+### 4. Update _tool_edit_file (line 264):
+
+```python
+# OLD:
+path = Path(file_path)
+
+# NEW:
+path = resolve_agent_path(file_path, agent, username)
+```
+
+## Rationale
+
+**Enables agent file operations:**
+- Agents can use simple filenames: `read_file("task.md")`
+- Automatically resolves to: `{agent}/Pickup/task.md`
+- Absolute paths still work for system files
+
+**Fixes current blockers:**
+- Kart can read INVESTIGATION_TASK.md
+- Agents can access their Pickup folders
+- Agent-to-agent file communication works
+
+**Backward compatible:**
+- Absolute paths unchanged
+- Only affects relative paths
+- No breaking changes to existing code
+
+## Risk Assessment
+
+- **Risk Level:** LOW
+- **Reversible:** YES (simple revert)
+- **Dependencies:** None
+- **Testing:**
+  - Test Kart reading from Pickup: `read_file("test.md")`
+  - Test absolute paths still work: `read_file("C:/full/path.md")`
+  - Test write_file and edit_file with relative paths
+
+## Implementation
+
+Full diff attached showing exact changes to tool_engine.py
+
+## Alternative Considered
+
+**Environment variable approach:** Set working directory per agent
+- **Rejected:** More complex, affects all file operations globally
+- **This approach better:** Surgical fix, only affects tool calls
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42

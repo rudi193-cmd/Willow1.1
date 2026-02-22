@@ -1,0 +1,266 @@
+# Governance Proposal: Fleet Training System - Teach, Don't Fix
+
+**Proposer:** Claude Code (claude-code)
+**Date:** 2026-02-13T16:20:00Z
+**Type:** Feature - Cost Optimization
+**Trust Level:** ENGINEER (3)
+
+## Summary
+Create a training feedback loop for free-tier LLMs to reduce Anthropic token burn from retries. Instead of Claude Code fixing mistakes, the fleet learns from failures through automated feedback, examples, and self-review.
+
+## Problem Statement
+**User report:** "I've ran out of weekly anthropic tokens three weeks in a row by sunday. [Free fleet] need to learn how to write good code that is usable without multiple retries."
+
+**Current Flow (Token Burn):**
+```
+Free Fleet writes bad code → Fails
+  → Claude Code detects error
+  → Claude Code fixes it ($$$ Anthropic tokens)
+  → Repeat next time (no learning)
+```
+
+**Target Flow (Self-Improving):**
+```
+Free Fleet writes code → Local review (Ollama, $0)
+  → If issues found: Show examples + retry (free tier)
+  → If still fails: Log pattern + escalate
+  → Build training library from failures
+  → Inject examples in future prompts (fleet learns)
+```
+
+## Proposed Architecture
+
+### 1. Training Database (`fleet_training.db`)
+Store failure patterns and good examples:
+
+**Tables:**
+- `failures` - Capture what went wrong (provider, task type, error, bad code)
+- `examples` - Good code patterns categorized by task type
+- `provider_stats` - Track which providers excel at which tasks
+- `training_sessions` - Log retry attempts and what worked
+
+### 2. Core Module (`core/fleet_trainer.py`)
+
+**Key Functions:**
+```python
+def log_failure(provider, task_type, prompt, bad_output, error_msg):
+    """Capture failed attempt for learning."""
+
+def get_training_examples(task_type, limit=3):
+    """Retrieve relevant examples to inject in prompt."""
+
+def review_code_locally(code, task_type):
+    """Use Ollama (qwen2.5-coder) to review before accepting."""
+
+def build_enhanced_prompt(base_prompt, task_type):
+    """Inject examples: 'Here are patterns that work...'"""
+
+def track_success(provider, task_type, output):
+    """Positive reinforcement - log what worked."""
+```
+
+### 3. Integration Points
+
+**A. llm_router.py Enhancement:**
+```python
+def ask(prompt, preferred_tier="free", task_type=None, enable_training=True):
+    if enable_training and task_type:
+        # Inject training examples
+        prompt = fleet_trainer.build_enhanced_prompt(prompt, task_type)
+
+    response = _execute_request(prompt, preferred_tier)
+
+    if enable_training and task_type:
+        # Local review for code generation tasks
+        if task_type in ["code_gen", "code_fix", "refactor"]:
+            review = fleet_trainer.review_code_locally(response.content, task_type)
+            if not review["passes"]:
+                # Retry with feedback
+                retry_prompt = f"{prompt}\n\nPrevious attempt failed: {review['issues']}\nTry again."
+                response = _execute_request(retry_prompt, preferred_tier)
+
+    return response
+```
+
+**B. kart_orchestrator.py Enhancement:**
+```python
+# When LLM fails JSON parsing
+except json.JSONDecodeError:
+    fleet_trainer.log_failure(
+        provider=response.provider,
+        task_type="json_response",
+        prompt=prompt[:500],
+        bad_output=json_str,
+        error_msg="Malformed JSON"
+    )
+    # Then return error...
+```
+
+### 4. Training Example Format
+
+**Example Entry (stored in DB):**
+```json
+{
+  "task_type": "code_gen",
+  "language": "python",
+  "description": "Create SQLite table initialization",
+  "good_pattern": "def init_table(conn):\n    conn.executescript(...)\n    conn.commit()",
+  "bad_pattern": "CREATE TABLE IF NOT EXISTS (no Python wrapper)",
+  "why_bad": "Raw SQL without function wrapper, no error handling"
+}
+```
+
+**Injected into Prompt:**
+```
+[Original task prompt]
+
+TRAINING EXAMPLES - Patterns that work:
+1. Python functions should wrap SQL operations:
+   ✅ def init_table(conn): conn.executescript(...)
+   ❌ Raw SQL strings without function structure
+
+2. Always include error handling for DB operations
+3. Close connections properly
+```
+
+### 5. Local Review Workflow (Ollama)
+
+```python
+def review_code_locally(code, task_type):
+    """Use local qwen2.5-coder to review before accepting."""
+    review_prompt = f"""Review this {task_type} code for common issues:
+
+{code}
+
+Check for:
+- Syntax errors
+- Missing imports
+- Incomplete functions (missing closing braces)
+- Common Python mistakes
+
+Respond with JSON:
+{{"passes": true/false, "issues": ["list of problems"]}}
+"""
+
+    # Use Ollama (free, local, fast)
+    result = llm_router.ask(review_prompt, preferred_tier="local")
+    return parse_review(result)
+```
+
+## Implementation Plan
+
+**Phase 1: Foundation (This Proposal)**
+- Create `fleet_training.db` schema
+- Implement `core/fleet_trainer.py` with core functions
+- Add logging hooks to `kart_orchestrator.py`
+
+**Phase 2: Enhancement (Follow-up)**
+- Integrate local review into `llm_router.ask()`
+- Build initial training examples (20-30 patterns)
+- Enable auto-retry with feedback
+
+**Phase 3: Optimization (Week 2)**
+- Track provider performance by task type
+- Smart routing: use best provider for each task
+- Monthly training report: "Fleet learned X patterns, reduced retries by Y%"
+
+## Risk Assessment
+- **Risk Level:** LOW
+- **Reversible:** YES - training system is opt-in via `enable_training` flag
+- **Dependencies:**
+  - Ollama running locally (already available)
+  - SQLite (already used)
+- **Testing:**
+  1. Run Kart task that previously failed
+  2. Verify local review catches issues
+  3. Confirm retry with feedback succeeds
+  4. Check training DB populated
+
+## ΔE Impact
+Expected ΔE: +0.25 (significant cost reduction + system self-improvement)
+
+**Cost Savings Projection:**
+- Current: Burning weekly Anthropic tokens by Sunday (~$5-10/week = $20-40/month)
+- Target: Stay under $0.10/month via self-training fleet
+- Savings: **$20-40/month → Near-zero**
+
+## Implementation (Phase 1)
+
+**File 1: `core/fleet_training.db` (schema)**
+```sql
+CREATE TABLE IF NOT EXISTS failures (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    task_type TEXT NOT NULL,
+    prompt_hash TEXT,
+    bad_output TEXT,
+    error_msg TEXT,
+    resolved_at TEXT,
+    resolution_notes TEXT
+);
+
+CREATE TABLE IF NOT EXISTS examples (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_type TEXT NOT NULL,
+    language TEXT,
+    description TEXT NOT NULL,
+    good_pattern TEXT NOT NULL,
+    bad_pattern TEXT,
+    why_bad TEXT,
+    added_by TEXT,
+    times_used INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS provider_stats (
+    provider TEXT NOT NULL,
+    task_type TEXT NOT NULL,
+    successes INTEGER DEFAULT 0,
+    failures INTEGER DEFAULT 0,
+    avg_quality REAL,
+    last_updated TEXT,
+    PRIMARY KEY (provider, task_type)
+);
+
+CREATE INDEX idx_failures_type ON failures(task_type);
+CREATE INDEX idx_examples_type ON examples(task_type);
+```
+
+**File 2: `core/fleet_trainer.py`** (initial implementation - ~200 lines)
+
+See IMPLEMENTATION.md for full code (too long for proposal).
+
+**Key additions:**
+- Import in orchestrator: `from core import fleet_trainer`
+- Log JSON failures: Add `fleet_trainer.log_failure()` call in exception handler
+- Track successes: Add `fleet_trainer.track_success()` on completion
+
+## Next Steps After Approval
+
+1. Create database schema
+2. Implement core trainer module
+3. Add logging hooks to orchestrator
+4. Seed 10 initial examples (JSON formatting, Python patterns, SQL best practices)
+5. Test with previously failed Kart command
+6. Measure: "Retries before success" metric
+
+## Success Metrics (Week 1)
+
+- ✅ Capture 20+ failure patterns
+- ✅ Build 15+ training examples
+- ✅ Reduce Kart task failures from 40% → 20%
+- ✅ Use Ollama for 80%+ code reviews (zero Anthropic cost)
+
+## Meta-Note: Dogfooding
+
+This follows the "Use Kart to Build Kart" principle. The fleet will:
+- Review its own code
+- Learn from its own mistakes
+- Build its own training library
+- Improve autonomously without burning your tokens
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42

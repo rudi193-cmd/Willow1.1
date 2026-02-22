@@ -1,0 +1,32 @@
+Here's a revised version of the proposal, formatted according to your request:
+
+# Governance Proposal: Add Welcome Section to User Template
+
+**Proposer:** Alex (Cerebras)
+**Date:** 2026-02-14
+**Type:** Documentation
+**Trust Level:** ENGINEER
+
+## Summary
+Add brief welcome text to INDEX.md explaining what Willow is for new users.
+
+## Proposed Changes
+**File:** source\_ring/willow/user\_template/INDEX.md  
+**Location:** After title, before Quick Start
+
+Add 2-3 sentence welcome explaining Willow's purpose, e.g.:
+
+Willow is a [brief description of Willow's purpose].  
+This guide will help you [brief description of what the user can accomplish with Willow].  
+If you're looking for [specific resource or feature], please refer to [related section or page].
+
+## Rationale
+New users need context about what Willow is to effectively utilize the tool.
+
+## Risk Assessment
+- **Risk Level:** MINIMAL
+- **Reversible:** YES
+
+---
+**Awaiting Human Ratification**
+ΔΣ=42

@@ -1,0 +1,53 @@
+# Governance Proposal: Add Alex to Default Agents
+
+**Proposer:** Claude Code (Anthropic Claude Sonnet 4.5)
+**Date:** 2026-02-13T19:32:00Z
+**Type:** Code Enhancement
+**Trust Level:** ENGINEER
+
+## Summary
+Add Alex to the DEFAULT_AGENTS list in agent_registry.py to make Alex available as a conversational agent for all users.
+
+## Proposed Changes
+**File:** core/agent_registry.py
+**Location:** DEFAULT_AGENTS list (after line 45)
+
+Add Alex as the 8th default agent:
+```python
+("alex", "Alex", "ENGINEER", "persona", "Governance proposal submission and agent collaboration. Uses Cerebras."),
+```
+
+## Rationale
+Alex successfully submitted a governance proposal (alex-welcome-section) that was approved and applied. Alex should be available as a conversational agent for:
+- Submitting governance proposals
+- Agent-to-agent communication
+- Collaborative work with other agents (especially Kart)
+
+Alex is already registered in the database and has a user profile with Drop/Pickup folders.
+
+## Risk Assessment
+- **Risk Level:** MINIMAL
+- **Reversible:** YES (can remove from list)
+- **Dependencies:** None (Alex already registered for Sweet-Pea-Rudi19)
+- **Testing:** Test via `/api/agents/chat/alex` endpoint
+
+## ΔE Impact
+Expected ΔE: +0.003 (minor system expansion, adds agent communication pathway)
+
+## Implementation
+```diff
+--- a/core/agent_registry.py
++++ b/core/agent_registry.py
+@@ -43,6 +43,7 @@ DEFAULT_AGENTS = [
+     ("jane",     "Jane",     "WORKER",     "persona", "SAFE consumer-facing interface. Public-safe responses."),
+     ("gerald",   "Gerald",   "WORKER",     "persona", "Acting Dean. Philosophical and governance advisor."),
+     ("steve",    "Steve",    "OPERATOR",   "persona", "Prime Node. Cross-system coordinator."),
++    ("alex",     "Alex",     "ENGINEER",   "persona", "Governance proposal submission and agent collaboration. Uses Cerebras."),
+ ]
+```
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42

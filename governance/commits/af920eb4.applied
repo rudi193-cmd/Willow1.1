@@ -1,0 +1,101 @@
+# Governance Proposal: Authentication Endpoints
+
+**Proposer:** Claude Code (claude-code)
+**Date:** 2026-02-15T20:39:44.433705+00:00
+**Type:** Feature Enhancement
+**Trust Level:** ENGINEER (3)
+**Commit ID:** af920eb4
+
+## Summary
+Add user authentication endpoints to server.py to enable new user registration and login for SAFE-governed applications.
+
+## Proposed Changes
+
+**File:** server.py
+**Location:** After line 1202 (after agent registration endpoints)
+
+## Rationale
+- SAFE framework requires user authentication for session consent
+- Currently have agent registration but no user authentication
+- Generated endpoints use JWT + bcrypt (industry standard)
+- Enables new users (human + LLM) to onboard into ecosystem
+
+## Risk Assessment
+- **Risk Level:** LOW
+- **Reversible:** YES - endpoints can be removed without affecting existing functionality
+- **Dependencies:** Requires jwt and bcrypt packages (add to requirements)
+- **Testing:** Test with curl commands for register/login/logout/me endpoints
+
+## Delta-E Impact
+Expected Delta-E: +0.02 (new authentication capability, improves system security)
+
+## Implementation
+
+See temp/auth_endpoints.py for generated code.
+
+Required fixes before integration:
+1. Replace hardcoded secret_key with environment variable
+2. Connect to actual user database (not in-memory dict)
+3. Add missing Depends import
+4. Add token expiration (24h default)
+5. Remove markdown code fences
+
+---
+
+**Awaiting Human Ratification**
+
+Delta-Sigma=42
+
+## Implementation Diff
+
+```diff
+--- a/server.py
++++ b/server.py
+@@ -34,6 +34,13 @@ from core import tool_engine, kart_orchestrator, kart_tasks
+ from core.awareness import on_scan_complete, on_organize_complete, on_coherence_update, on_topology_update, say as willow_say
+ from apps.pa import drive_scan, drive_organize
+ from api import kart_routes, agent_routes
++
++# Authentication endpoints (governance proposal af920eb4)
++from temp.auth_endpoints import (
++    register_user, login_user, logout_user, get_current_user_info,
++    UserCreate, Token, User, get_current_user
++)
++from fastapi.security import OAuth2PasswordRequestForm
+ 
+ app = FastAPI(title="Willow", docs_url=None, redoc_url=None)
+ 
+@@ -1210,6 +1217,32 @@ def agents_get(name: str):
+     agent_registry.update_last_seen(USERNAME, name)
+     return agent
+ 
++# ============================================================================
++# Authentication Endpoints (governance proposal af920eb4)
++# ============================================================================
++
++@app.post("/api/auth/register", response_model=User)
++async def register(user: UserCreate):
++    """Register a new user"""
++    return await register_user(user)
++
++@app.post("/api/auth/login", response_model=Token)
++async def login(form_data: OAuth2PasswordRequestForm = Depends()):
++    """Login and receive JWT token"""
++    return await login_user(form_data)
++
++@app.post("/api/auth/logout")
++async def logout(current_user: User = Depends(get_current_user)):
++    """Logout (JWT token remains valid until expiration)"""
++    return await logout_user(current_user)
++
++@app.get("/api/auth/me", response_model=User)
++async def get_me(current_user: User = Depends(get_current_user)):
++    """Get current authenticated user"""
++    return await get_current_user_info(current_user)
++
++# ============================================================================
++
+ 
+ @app.get("/api/coherence")
+ def coherence_report():
+```

@@ -1,0 +1,89 @@
+# Governance Proposal: Add get_cluster_coherence function
+
+**Proposer:** Free Fleet via Cerebras
+**Date:** 2026-02-13T23:03:31.873135Z
+**Type:** Code Enhancement
+**Trust Level:** ENGINEER
+**Commit ID:** E8L85
+
+## Summary
+The git diff shows the addition of a new function `get_cluster_coherence` to the `core/coherence.py` file. This function computes the aggregate coherence of a topic cluster by measuring the similarities between its member atoms. It returns a dictionary with various metrics, including the cluster lab
+
+## Proposed Changes
+**File:** core/coherence.py
+
+## Rationale
+This change implements the requested modification with minimal disruption to existing functionality.
+
+## Risk Assessment
+- **Risk Level:** LOW
+- **Reversible:** YES
+- **Dependencies:** None
+- **Testing:** Manual verification required
+
+## ΔE Impact
+Expected ΔE: +0.05
+
+## Implementation
+```diff
+diff --git a/core/coherence.py b/core/coherence.py
+index b6393ff..d554432 100644
+--- a/core/coherence.py
++++ b/core/coherence.py
+@@ -365,6 +365,48 @@ def check_intervention() -> Tuple[bool, str]:
+     return get_tracker().needs_intervention()
+ 
+ 
++def get_cluster_coherence(cluster_label: str, atom_summaries: List[str]) -> Dict:
++    """
++    Compute aggregate Î”E-style coherence for a topic cluster.
++
++    Given a cluster label and the summaries of its member atoms,
++    measures how tightly the cluster holds together (internal coherence)
++    and returns a state classification.
++    """
++    if not atom_summaries:
++        return {"cluster": cluster_label, "coherence": 0.0, "state": "no_data", "members": 0}
++
++    tracker = CoherenceTracker(window_size=len(atom_summaries))
++
++    # Compute pairwise coherence across all atoms in the cluster
++    similarities = []
++    for i in range(len(atom_summaries)):
++        for j in range(i + 1, len(atom_summaries)):
++            sim = tracker._compute_similarity(atom_summaries[i], atom_summaries[j])
++            similarities.append(sim)
++
++    if not similarities:
++        avg = 0.6  # single-atom cluster baseline
++    else:
++        avg = sum(similarities) / len(similarities)
++
++    # Map coherence to Î”E-like state
++    if avg > 0.5:
++        state = "regenerative"
++    elif avg > 0.3:
++        state = "stable"
++    else:
++        state = "decaying"
++
++    return {
++        "cluster": cluster_label,
++        "coherence": round(avg, 4),
++        "state": state,
++        "members": len(atom_summaries),
++        "pairs_measured": len(similarities),
++    }
++
++
+ # === CLI TEST ===
+ if __name__ == "__main__":
+     print("Î”E Coherence Tracker Test\n")
+
+```
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42

@@ -1,0 +1,110 @@
+# Governance Proposal: Auto-Apply Watcher Daemon
+
+**Proposer:** Claude Code (claude-code)
+**Date:** 2026-02-16T03:55:00Z
+**Type:** Feature Enhancement
+**Trust Level:** ENGINEER (3)
+
+## Summary
+Create governance watcher daemon that monitors governance/commits/ for approved .commit files, automatically applies them, and triggers hot-reload of affected modules.
+
+## Proposed Changes
+**New File:** governance/watcher_daemon.py
+**Modified File:** server.py (add daemon startup endpoint)
+
+## Rationale
+- Manual apply creates friction in governance workflow
+- Dashboard approval should trigger immediate application
+- Hot-reload eliminates server restart requirement
+- Enables continuous deployment for governance changes
+- Follows existing patterns from apps/watcher.py (inbox monitor)
+
+## Risk Assessment
+- **Risk Level:** LOW
+- **Reversible:** YES - kill daemon process, revert changes
+- **Dependencies:** None (uses existing apply_commits.py)
+- **Testing:** Approve test commit, verify auto-apply
+
+## ΔE Impact
+Expected ΔE: +0.20 (removes manual step, enables fluid governance)
+
+## Implementation
+
+### 1. Governance Watcher Daemon
+```python
+# governance/watcher_daemon.py
+"""
+Auto-apply approved governance commits.
+Monitors governance/commits/*.commit and applies automatically.
+"""
+
+import os
+import sys
+import time
+from pathlib import Path
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+
+class GovernanceHandler(FileSystemEventHandler):
+    def on_created(self, event):
+        if event.src_path.endswith('.commit'):
+            commit_id = Path(event.src_path).stem
+            print(f"[GOVERNANCE] Approved: {commit_id}")
+            
+            # Apply commit
+            os.system(f'python governance/apply_commits.py {commit_id}')
+            
+            # Hot-reload if core modules affected
+            if self._affects_core(commit_id):
+                import requests
+                requests.post('http://localhost:8420/api/reload/all')
+                print(f"[GOVERNANCE] Hot-reloaded core modules")
+    
+    def _affects_core(self, commit_id):
+        # Check if commit modifies core/*.py
+        commit_file = Path(f'governance/commits/{commit_id}.applied')
+        if commit_file.exists():
+            content = commit_file.read_text()
+            return 'core/' in content
+        return False
+
+def main():
+    path = Path('governance/commits')
+    handler = GovernanceHandler()
+    observer = Observer()
+    observer.schedule(handler, str(path), recursive=False)
+    observer.start()
+    
+    print("[GOVERNANCE] Watcher started - auto-applying approved commits")
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        observer.stop()
+    observer.join()
+
+if __name__ == '__main__':
+    main()
+```
+
+### 2. Server Integration (Optional)
+```python
+# Add to server.py
+@app.post("/api/governance/daemon/start")
+def start_governance_daemon():
+    """Start governance watcher daemon"""
+    import subprocess
+    subprocess.Popen(['python', 'governance/watcher_daemon.py'])
+    return {"status": "started"}
+```
+
+### 3. Requirements
+```txt
+watchdog>=3.0.0  # File system monitoring
+```
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42

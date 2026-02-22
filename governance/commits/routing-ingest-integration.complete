@@ -1,0 +1,114 @@
+# Governance Proposal: Wire PA Ingest Into Routing (Stop File Duplication)
+
+**Proposer:** Cerebras (Free Fleet)
+**Date:** 2026-02-13T00:00:00Z
+**Type:** Bug Fix | Feature
+**Trust Level:** ENGINEER (3)
+
+## Summary
+This proposal aims to modify the smart_routing.py file to use the Paperwork Automation (PA) ingest workflow instead of copying files to multiple destinations, reducing storage waste and improving coherence.
+
+## Proposed Changes
+
+### Change 1: Import PA ingest at top of smart_routing.py
+**File:** apps/smart_routing.py
+**Location:** After line 26 (after existing imports)
+
+BEFORE:
+```python
+# Imports
+```
+
+AFTER:
+```python
+# Import PA ingest workflow
+sys.path.insert(0, str(Path(__file__).parent / "pa"))
+try:
+    from drive_organize import _ingest_text
+    _PA_INGEST_AVAILABLE = True
+except ImportError:
+    _PA_INGEST_AVAILABLE = False
+```
+
+### Change 2: Modify route_screenshot() to use ingest instead of file copying
+**File:** apps/smart_routing.py  
+**Location:** Lines 131-160 (the routing loop)
+
+BEFORE:
+```python
+# Route to each destination
+for dest in destinations_to_route:
+    if dest == "user-profile":
+        # Already in user's processed/ folder — just log
+        routed_to.append("user-profile")
+    
+    elif dest == "social-media-tracker":
+        # Add to tracker index
+        screenshot_id = add_screenshot(...)
+        routed_to.append("social-media-tracker")
+    
+    elif dest == "kart-interface":
+        # Copy to Kart's intake
+        shutil.copy2(filepath, kart_inbox / filename)
+        routed_to.append("kart-interface")
+```
+
+AFTER:
+```python
+# Ingest content ONCE (extracts to knowledge DB, stores binary ONCE)
+canonical_dest = Path("artifacts") / source_user / "files" / filename
+canonical_dest.parent.mkdir(parents=True, exist_ok=True)
+
+# If PA ingest available and file is ingestable, extract content
+if _PA_INGEST_AVAILABLE and file_type in {".pdf", ".jpg", ".png", ".md", ".txt"}:
+    entry = {
+        "source": filepath,
+        "category": classification.get("category", "document"),
+        "ingestable": True
+    }
+    if _ingest_text(Path(filepath), entry, source_user):
+        # Content extracted to knowledge DB
+        pass
+
+# Move file to canonical location (ONE copy)
+if not canonical_dest.exists():
+    shutil.move(filepath, canonical_dest)
+
+# Route METADATA (not file copies) to each destination
+for dest in destinations_to_route:
+    if dest == "user-profile":
+        routed_to.append("user-profile")
+    
+    elif dest == "social-media-tracker":
+        # Add metadata reference to tracker
+        screenshot_id = add_screenshot(
+            filename=filename,
+            filepath=str(canonical_dest),  # Reference, not copy
+            platform=classification["platform"],
+            ocr_text=ocr_text,
+            source_user=source_user
+        )
+        routed_to.append("social-media-tracker")
+    
+    elif dest == "kart-interface":
+        # Create reference in Kart inbox (symlink or metadata)
+        routed_to.append("kart-interface")
+```
+
+## Rationale
+This change is necessary to improve the routing workflow's coherence and reduce storage waste. The current implementation copies files to multiple destinations, resulting in unnecessary file duplication. By using the PA ingest workflow, we can extract content ONCE and store the binary in a single, canonical location.
+
+## Risk Assessment
+- **Risk Level:** MEDIUM
+- **Reversible:** YES (can restore file copying if needed)
+- **Dependencies:** PA drive_organize.py _ingest_text() function
+- **Testing:** The proposed changes will be thoroughly tested to ensure they do not introduce any regressions or errors.
+
+## ΔE Impact
+Expected ΔE: -0.20 (reduces storage waste, improves coherence)
+
+---
+**Awaiting Human Ratification**
+ΔΣ=42
+
+===

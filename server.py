@@ -252,6 +252,37 @@ async def chat(request: Request):
     return StreamingResponse(generate(), media_type="text/event-stream")
 
 
+@app.post("/api/utety/chat")
+async def utety_chat(request: Request):
+    """
+    UTETY chat proxy — same contract as the Cloudflare Worker.
+    Body: {message, persona, history: [{role, content}]}
+    Returns: {response} or {error}
+    Routes through the free fleet via llm_router.
+    """
+    body = await request.json()
+    message = body.get("message", "").strip()
+    persona = body.get("persona", "")
+    history = body.get("history", [])
+
+    if not message or not persona:
+        return {"error": "missing fields"}
+
+    history_text = ""
+    for turn in history[-10:]:
+        role = "User" if turn.get("role") == "user" else "Assistant"
+        history_text += f"{role}: {turn.get('content', '')}\n"
+
+    full_prompt = f"{persona}\n\n{history_text}User: {message}" if history_text else f"{persona}\n\nUser: {message}"
+
+    from core import llm_router
+    llm_router.load_keys_from_json()
+    result = llm_router.ask(full_prompt, preferred_tier="free")
+    if result:
+        return {"response": result.content}
+    return {"error": "fleet_unavailable"}
+
+
 @app.post("/api/chat/multi")
 async def chat_multi(request: Request):
     """
