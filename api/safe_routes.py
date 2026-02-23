@@ -25,6 +25,12 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+# Health monitor (ported from Willow1.1)
+try:
+    from core.health import check_node_health
+except ImportError:
+    check_node_health = None
+
 router = APIRouter(prefix="/api/safe", tags=["safe"])
 
 # ── In-memory consent sessions ─────────────────────────────────────────────
@@ -215,6 +221,36 @@ def safe_health():
         except Exception:
             pass
 
+    # Watcher liveness (check PID lock file)
+    lock_file = Path(r"C:\Users\Sean\.willow\watcher.lock")
+    watcher_alive = False
+    if lock_file.exists():
+        try:
+            import ctypes
+            pid = int(lock_file.read_text().strip())
+            handle = ctypes.windll.kernel32.OpenProcess(0x0400, False, pid)
+            if handle:
+                ctypes.windll.kernel32.CloseHandle(handle)
+                watcher_alive = True
+        except Exception:
+            pass
+
+    # OCR queue depth
+    pickup_path = Path(r"C:\Users\Sean\My Drive\Willow\Auth Users\Sweet-Pea-Rudi19\Pickup")
+    ocr_queue_depth = len(list(pickup_path.glob("ocr_queue_*.json"))) if pickup_path.exists() else 0
+
+    # Node health (fresh within last hour)
+    node_health = {}
+    if check_node_health:
+        try:
+            node_health = {
+                k: {"status": v["status"], "last_update": v.get("last_update")}
+                for k, v in check_node_health(stale_threshold_hours=1).items()
+                if v["status"] != "no_db"
+            }
+        except Exception:
+            pass
+
     return JSONResponse(
         {
             "status": "ok",
@@ -222,6 +258,9 @@ def safe_health():
             "db_reachable": db_ok,
             "knowledge_count": db_count,
             "lattice_domains": lattice_domains,
+            "watcher_alive": watcher_alive,
+            "ocr_queue_depth": ocr_queue_depth,
+            "nodes": node_health,
         },
         headers=CORS_HEADERS,
     )
