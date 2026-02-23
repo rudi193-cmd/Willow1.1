@@ -18,6 +18,9 @@ def find_git_bash():
     
     # Try PATH
     git_bash = shutil.which("bash")
+    # Exclude WSL relay (System32ash.exe routes into docker-desktop which has no /bin/bash)
+    if git_bash and "System32" in git_bash:
+        return None
     return git_bash
 
 def execute_command(command: str, timeout: int = 60):

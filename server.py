@@ -34,7 +34,7 @@ from core import agent_registry
 from core import tool_engine, kart_orchestrator, kart_tasks
 from core.awareness import on_scan_complete, on_organize_complete, on_coherence_update, on_topology_update, say as willow_say
 from apps.pa import drive_scan, drive_organize
-from api import kart_routes, agent_routes
+from api import kart_routes, agent_routes, safe_routes
 
 app = FastAPI(title="Willow", docs_url=None, redoc_url=None)
 
@@ -54,6 +54,7 @@ USERNAME = local_api.DEFAULT_USER
 # Mount API routes
 app.include_router(kart_routes.router)  # Task orchestration
 app.include_router(agent_routes.router)  # Conversational agents
+app.include_router(safe_routes.router)   # SAFE OS — consent + knowledge query
 # Governance endpoints already defined in server.py (lines 1023-1155)
 
 

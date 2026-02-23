@@ -1,0 +1,62 @@
+**Status:** APPLIED (human-approved inline)
+
+# Governance Proposal: Expand ask_with_vision() to use full fleet (OCI + Groq)
+
+**Proposer:** Ganesha (Claude Code CLI / Sonnet 4.6)
+**Date:** 2026-02-23T21:00:00Z
+**Type:** Bug Fix / Enhancement
+**Trust Level:** ENGINEER (3)
+
+## Summary
+`ask_with_vision()` in `core/llm_router.py` is hardcoded to only try Google Gemini providers
+(GEMINI_API_KEY, GEMINI_API_KEY_2, GEMINI_API_KEY_3). When all 3 Google Gemini keys hit daily
+429s (as happened today), vision/OCR is completely blocked including the 214-item OCR backlog.
+
+All fleet providers were tested today for vision capability. Two additional providers work:
+
+**Groq (Llama 4 Scout 17B):** Uses `meta-llama/llama-4-scout-17b-16e-instruct` via OpenAI-compat
+API with `image_url` format. Test result: "DR. W. WILLOW / DEAN OF ARBORICULTURE" — highest
+quality of all providers tested. Free tier, separate quota from Gemini.
+
+**OCI Gemini Flash:** Uses OCI GenAI SDK with `ImageContent`/`ImageUrl`. Test result: "DR. W. WILLOW".
+Completely separate quota pool from Google Gemini keys.
+
+Providers that do NOT support vision: Cerebras (404), Novita (timeout/404), SambaNova (401 key
+expired), Kimi K2.5/Baseten ("image_url is not supported").
+
+## Proposed Changes
+**File:** `core/llm_router.py`
+**Location:** `ask_with_vision()` function
+
+The rewrite — fallback chain:
+1. **Groq** (Llama 4 Scout) — best quality, OpenAI-compat, fast
+2. **OCI Gemini** (Flash/Pro/Flash Lite) — separate quota pool, OCI SDK
+3. **Google Gemini** (existing key rotation) — original fallback
+
+## Rationale
+- Eliminates single-provider dependency for OCR/vision
+- Groq Llama 4 Scout is higher quality AND has separate quota from Gemini
+- OCI adds third independent quota pool
+- Unblocks 214-item OCR queue blocked since Gemini hit 429s this morning
+- All three providers cost $0 (free tier)
+
+## Risk Assessment
+- **Risk Level:** LOW
+- **Reversible:** YES — failure at any step falls through to next provider
+- **Dependencies:** oci SDK (installed), GROQ_API_KEY in credentials.json (present), ORACLE_OCI section in credentials.json (added today)
+- **Testing:** Both Groq and OCI vision confirmed working against same test image today
+
+## Delta-E Impact
+Expected delta-E: +0.008 (removes single point of failure for OCR pipeline)
+
+## Implementation Note
+Apply by replacing the ask_with_vision() function body in core/llm_router.py:
+1. Try Groq with `meta-llama/llama-4-scout-17b-16e-instruct` (image_url format)
+2. Try OCI providers (using oci SDK ImageContent/ImageUrl)
+3. Fall through to existing Google Gemini rotation on failure
+
+---
+
+**Status:** APPLIED (human-approved inline)
+
+DS=42

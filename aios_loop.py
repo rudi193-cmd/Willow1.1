@@ -859,6 +859,8 @@ def git_auto_push():
         code_files = []
 
         for line in changed:
+            if len(line) < 3:
+                continue
             f = line[3:].strip().strip('"')
             if f.startswith("artifacts/"):
                 artifact_files.append(f)
@@ -867,8 +869,8 @@ def git_auto_push():
 
         # Auto-push artifacts
         if artifact_files:
-            for af in artifact_files:
-                subprocess.run(["git", "add", af], cwd=EARTH_PATH, timeout=10)
+            # Add all artifacts at once — avoids per-path quoting/encoding issues
+            subprocess.run(["git", "add", "artifacts/"], cwd=EARTH_PATH, timeout=10)
             ts = datetime.now().strftime('%Y-%m-%d %H:%M')
             msg = f"willow: auto-filed {len(artifact_files)} artifacts [{ts}]"
             subprocess.run(["git", "commit", "-m", msg], cwd=EARTH_PATH, timeout=15)

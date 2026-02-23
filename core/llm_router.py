@@ -91,7 +91,9 @@ def load_keys_from_json():
     Reads 'credentials.json' and loads any API keys found into the environment.
     This bridges the gap between the file on your desktop and the script.
     """
-    key_path = Path("credentials.json")
+    # Try absolute canonical path first, fall back to cwd for portability
+    _canonical = Path(__file__).parent.parent / "credentials.json"
+    key_path = _canonical if _canonical.exists() else Path("credentials.json")
     if not key_path.exists():
         return
 
@@ -102,7 +104,7 @@ def load_keys_from_json():
         # Flatten simple JSON structure
         # We look for specific keys expected by the router
         target_keys = [
-            "GEMINI_API_KEY", "GROQ_API_KEY", "CEREBRAS_API_KEY",
+            "GEMINI_API_KEY", "GEMINI_API_KEY_2", "GEMINI_API_KEY_3", "GEMINI_API_KEY_4", "GROQ_API_KEY", "GROQ_API_KEY_2", "CEREBRAS_API_KEY",
             "SAMBANOVA_API_KEY", "HUGGINGFACE_API_KEY", "DEEPSEEK_API_KEY",
             "MISTRAL_API_KEY", "TOGETHER_API_KEY", "OPENROUTER_API_KEY",
             "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "FIREWORKS_API_KEY",
@@ -154,8 +156,12 @@ PROVIDERS = [
     ProviderConfig("OCI Gemini Flash", "ORACLE_OCI", "https://inference.generativeai.us-phoenix-1.oci.oraclecloud.com", "ocid1.generativeaimodel.oc1.phx.amaaaaaask7dceyaftocxtdymuntmco34k6fosinafgzvp2ixctikldeb2mq", "free"),
     ProviderConfig("OCI Gemini Flash Lite", "ORACLE_OCI", "https://inference.generativeai.us-phoenix-1.oci.oraclecloud.com", "ocid1.generativeaimodel.oc1.phx.amaaaaaask7dceyaou4wnsto3famucn5b4eq7qxowzsbtco5mv5uzf3j37za", "free"),
     ProviderConfig("Groq", "GROQ_API_KEY", "https://api.groq.com/openai/v1/chat/completions", "llama-3.1-8b-instant", "free"),
+    ProviderConfig("Groq2", "GROQ_API_KEY_2", "https://api.groq.com/openai/v1/chat/completions", "llama-3.1-8b-instant", "free"),
     ProviderConfig("Cerebras", "CEREBRAS_API_KEY", "https://api.cerebras.ai/v1/chat/completions", "llama3.1-8b", "free"),
     ProviderConfig("Google Gemini", "GEMINI_API_KEY", "https://generativelanguage.googleapis.com/v1beta/models/", "gemini-2.5-flash", "free"),
+    ProviderConfig("Google Gemini 2", "GEMINI_API_KEY_2", "https://generativelanguage.googleapis.com/v1beta/models/", "gemini-2.5-flash", "free"),
+    ProviderConfig("Google Gemini 3", "GEMINI_API_KEY_3", "https://generativelanguage.googleapis.com/v1beta/models/", "gemini-2.5-flash", "free"),
+    ProviderConfig("Google Gemini 4", "GEMINI_API_KEY_4", "https://generativelanguage.googleapis.com/v1beta/models/", "gemini-2.5-flash", "free"),
     ProviderConfig("SambaNova", "SAMBANOVA_API_KEY", "https://api.sambanova.ai/v1/chat/completions", "Meta-Llama-3.1-8B-Instruct", "free"),
     # ProviderConfig("Fireworks", "FIREWORKS_API_KEY", "https://api.fireworks.ai/inference/v1/chat/completions", "accounts/fireworks/models/llama-v3p1-8b-instruct", "free"),  # Disabled - 404 model not found
     # ProviderConfig("Cohere", "COHERE_API_KEY", "https://api.cohere.ai/v1/chat", "command-r", "free"),  # Disabled - 401 auth error
@@ -655,81 +661,143 @@ def ask(prompt: str, preferred_tier: str = "free", use_round_robin: bool = True)
     return None
 
 def ask_with_vision(prompt: str, image_data: str, preferred_tier: str = "free") -> Optional[str]:
-    """
-    Send a prompt with an image to a vision-capable LLM.
-
-    Args:
-        prompt: The text prompt
-        image_data: Base64-encoded image data
-        preferred_tier: Preferred tier (currently only "free" supports vision via Gemini)
-
-    Returns:
-        Response text or None if all providers fail
-    """
-    # Only Gemini 2.5 Flash supports vision in the free tier
-    if not os.environ.get("GEMINI_API_KEY"):
-        logging.warning("Vision requires Gemini API key")
-        return None
-
-    # Try Gemini Vision
-    provider = None
-    for p in PROVIDERS:
-        if p.name == "Google Gemini":
-            provider = p
-            break
-
-    if not provider:
-        logging.error("Gemini provider not configured")
-        return None
-
+    """Send a prompt with an image to a vision-capable LLM. Fallback chain: Groq -> OCI Gemini -> Google Gemini."""
     start_time = time.time()
 
-    try:
-        # Gemini multimodal API format
-        url = f"{provider.base_url}{provider.model}:generateContent?key={os.environ.get(provider.env_key)}"
-
-        payload = {
-            "contents": [{
-                "parts": [
-                    {"text": prompt},
-                    {
-                        "inline_data": {
-                            "mime_type": "image/jpeg",  # Assume JPEG, works for PNG too
-                            "data": image_data
-                        }
-                    }
-                ]
-            }]
-        }
-
-        resp = requests.post(url, json=payload, timeout=60)
-
-        if resp.status_code == 200:
-            response_time_ms = int((time.time() - start_time) * 1000)
-            response_text = resp.json()['candidates'][0]['content']['parts'][0]['text']
-
-            provider_health.record_success(provider.name, response_time_ms)
-
-            # Performance tracking
-            patterns_provider.log_provider_performance(
-                provider=provider.name,
-                file_type='image',
-                category='vision_ocr',
-                response_time_ms=response_time_ms,
-                success=True
+    # --- 1. Groq (Llama 4 Scout) --- best quality, free, separate quota ---
+    groq_key = os.environ.get("GROQ_API_KEY")
+    if not groq_key:
+        try:
+            _creds_path = Path("credentials.json")
+            if _creds_path.exists():
+                with open(_creds_path) as _f:
+                    _c = json.load(_f)
+                groq_key = _c.get("GROQ_API_KEY")
+        except Exception:
+            pass
+    if groq_key:
+        try:
+            resp = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
+                json={
+                    "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+                    "messages": [{"role": "user", "content": [
+                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_data}"}},
+                        {"type": "text", "text": prompt}
+                    ]}],
+                    "max_tokens": 2048
+                },
+                timeout=60
             )
+            if resp.status_code == 200:
+                response_time_ms = int((time.time() - start_time) * 1000)
+                response_text = resp.json()["choices"][0]["message"]["content"]
+                provider_health.record_success("Groq", response_time_ms)
+                patterns_provider.log_provider_performance(
+                    provider="Groq", file_type="image", category="vision_ocr",
+                    response_time_ms=response_time_ms, success=True
+                )
+                return response_text
+            elif resp.status_code == 429:
+                logging.warning("Groq vision rate limited (429) -- trying OCI")
+                provider_health.record_failure("Groq", "429", "rate_limited")
+            else:
+                logging.warning(f"Groq vision returned {resp.status_code}: {resp.text[:200]}")
+                provider_health.record_failure("Groq", str(resp.status_code), resp.text[:200])
+        except Exception as _groq_err:
+            logging.warning(f"Groq vision failed: {_groq_err}")
+            provider_health.record_failure("Groq", type(_groq_err).__name__, str(_groq_err)[:200])
 
-            return response_text
-        else:
-            provider_health.record_failure(provider.name, str(resp.status_code), resp.text[:200])
-            logging.warning(f"Gemini Vision returned {resp.status_code}: {resp.text[:200]}")
-            return None
+    # --- 2. OCI Gemini (separate quota pool) ---
+    try:
+        _creds_path = Path("credentials.json")
+        if _creds_path.exists():
+            with open(_creds_path) as _f:
+                _creds = json.load(_f)
+            oracle_config = _creds.get("ORACLE_OCI", {})
+            compartment_id = oracle_config.get("compartment_id")
+            config_path = oracle_config.get("config_path", str(Path.home() / ".oci" / "config"))
+            if compartment_id and Path(config_path).exists():
+                import oci as _oci
+                from oci.generative_ai_inference import GenerativeAiInferenceClient as _OciClient
+                from oci.generative_ai_inference.models import (
+                    GenericChatRequest as _GCR, OnDemandServingMode as _ODSM,
+                    ChatDetails as _CD, TextContent as _TC,
+                    UserMessage as _UM, ImageContent as _IC, ImageUrl as _IU
+                )
+                oci_config = _oci.config.from_file(config_path)
+                oci_providers = [p for p in PROVIDERS if p.name.startswith("OCI ")]
+                for provider in oci_providers:
+                    try:
+                        client = _OciClient(config=oci_config, service_endpoint=provider.base_url)
+                        response = client.chat(_CD(
+                            compartment_id=compartment_id,
+                            serving_mode=_ODSM(model_id=provider.model),
+                            chat_request=_GCR(
+                                messages=[_UM(content=[
+                                    _IC(image_url=_IU(url=f"data:image/png;base64,{image_data}")),
+                                    _TC(text=prompt)
+                                ])],
+                                max_tokens=2048
+                            )
+                        ))
+                        response_time_ms = int((time.time() - start_time) * 1000)
+                        response_text = response.data.chat_response.choices[0].message.content[0].text
+                        provider_health.record_success(provider.name, response_time_ms)
+                        patterns_provider.log_provider_performance(
+                            provider=provider.name, file_type="image", category="vision_ocr",
+                            response_time_ms=response_time_ms, success=True
+                        )
+                        return response_text
+                    except Exception as _oci_err:
+                        provider_health.record_failure(provider.name, type(_oci_err).__name__, str(_oci_err)[:200])
+                        logging.warning(f"OCI vision {provider.name} failed: {_oci_err} -- trying next")
+                        continue
+    except Exception as _oci_setup_err:
+        logging.warning(f"OCI vision setup failed: {_oci_setup_err}")
 
-    except Exception as e:
-        provider_health.record_failure(provider.name, type(e).__name__, str(e))
-        logging.error(f"Gemini Vision failed: {e}")
-        return None
+    # --- 3. Google Gemini (key rotation, original fallback) ---
+    gemini_providers = [
+        p for p in PROVIDERS
+        if p.name.startswith("Google Gemini") and os.environ.get(p.env_key)
+    ]
+    for provider in gemini_providers:
+        try:
+            url = f"{provider.base_url}{provider.model}:generateContent?key={os.environ.get(provider.env_key)}"
+            payload = {
+                "contents": [{
+                    "parts": [
+                        {"text": prompt},
+                        {"inline_data": {"mime_type": "image/png", "data": image_data}}
+                    ]
+                }]
+            }
+            resp = requests.post(url, json=payload, timeout=60)
+            if resp.status_code == 200:
+                response_time_ms = int((time.time() - start_time) * 1000)
+                response_text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
+                provider_health.record_success(provider.name, response_time_ms)
+                patterns_provider.log_provider_performance(
+                    provider=provider.name, file_type="image", category="vision_ocr",
+                    response_time_ms=response_time_ms, success=True
+                )
+                return response_text
+            elif resp.status_code == 429:
+                logging.warning(f"{provider.name} rate limited (429) -- trying next key")
+                provider_health.record_failure(provider.name, "429", "rate_limited")
+                continue
+            else:
+                provider_health.record_failure(provider.name, str(resp.status_code), resp.text[:200])
+                logging.warning(f"{provider.name} returned {resp.status_code}: {resp.text[:200]}")
+                continue
+        except Exception as e:
+            provider_health.record_failure(provider.name, type(e).__name__, str(e))
+            logging.error(f"{provider.name} vision failed: {e}")
+            continue
 
+    logging.error("All vision providers exhausted (Groq + OCI + Gemini)")
+    return None
 def print_status():
     """Print available providers to console."""
     avail = get_available_providers()
