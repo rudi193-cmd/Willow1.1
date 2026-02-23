@@ -26,6 +26,7 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, List
+import os
 
 # --- Paths ---
 DROP_PATH    = Path(r"C:\Users\Sean\My Drive\Willow\Auth Users\Sweet-Pea-Rudi19\Drop")
@@ -36,6 +37,7 @@ EVENT_LOG    = Path(r"C:\Users\Sean\.willow\events.log")
 KNOWLEDGE_DB = Path(r"C:\Users\Sean\Documents\GitHub\Willow\artifacts\Sweet-Pea-Rudi19\willow_knowledge.db")
 CREDENTIALS  = Path(r"C:\Users\Sean\Documents\GitHub\Willow\credentials.json")
 POLL_INTERVAL = 5  # seconds
+LOCK_FILE    = Path(r"C:\Users\Sean\.willow\watcher.lock")
 
 # Known API key names accepted in Drop key-update files
 KNOWN_API_KEYS = {
@@ -223,6 +225,36 @@ def ensure_dirs():
     PICKUP_PATH.mkdir(parents=True, exist_ok=True)
 
 
+
+def _is_pid_running(pid: int) -> bool:
+    """Check if a PID is still running (Windows)."""
+    try:
+        import ctypes
+        handle = ctypes.windll.kernel32.OpenProcess(0x0400, False, pid)
+        if handle:
+            ctypes.windll.kernel32.CloseHandle(handle)
+            return True
+        return False
+    except Exception:
+        return False
+
+
+def acquire_instance_lock() -> bool:
+    """Prevent multiple watcher instances. Returns False if another is running."""
+    if LOCK_FILE.exists():
+        try:
+            pid = int(LOCK_FILE.read_text().strip())
+            if _is_pid_running(pid):
+                return False  # another watcher is alive
+        except (ValueError, Exception):
+            pass  # stale lock -- overwrite it
+    LOCK_FILE.write_text(str(os.getpid()))
+    return True
+
+
+def release_instance_lock():
+    LOCK_FILE.unlink(missing_ok=True)
+
 def load_state() -> Dict:
     if STATE_FILE.exists():
         with open(STATE_FILE, "r") as f:
@@ -280,7 +312,7 @@ def ingest_to_knowledge(item: Path, text: str, source_type: str, category: str) 
     lattice = classify_lattice(source_type, category, title)
 
     try:
-        conn = sqlite3.connect(KNOWLEDGE_DB)
+        conn = sqlite3.connect(KNOWLEDGE_DB, timeout=30)
         existing = conn.execute(
             "SELECT id FROM knowledge WHERE source_id=?", (source_id,)
         ).fetchone()
@@ -481,6 +513,10 @@ def main():
     else:
         print("Background mode: consent assumed from human startup.")
 
+    if not acquire_instance_lock():
+        log_event("WATCHER_LOCKED", f"Another watcher already running. Exiting.")
+        return
+
     ensure_dirs()
     state = load_state()
 
@@ -560,6 +596,7 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
+        release_instance_lock()
         log_event("WATCHER_OFF", f"known_items={len(state['known_files'])}")
         save_state(state)
         print(f"\nWatcher off. Tracking {len(state['known_files'])} items.")
