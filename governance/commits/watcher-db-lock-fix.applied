@@ -1,0 +1,114 @@
+# Governance Proposal: Fix watcher DB lock contention
+
+**Proposer:** Ganesha (Claude Code CLI / Sonnet 4.6)
+**Date:** 2026-02-23T00:00:00Z
+**Type:** Bug Fix
+**Trust Level:** ENGINEER (3)
+
+## Summary
+watcher.py hits "database is locked" errors because multiple watcher instances run simultaneously, each trying to write to willow_knowledge.db concurrently. SQLite WAL allows one writer at a time; multiple writers overflow the 5s busy timeout. Fix: PID lock file prevents duplicate instances; DB connection timeout raised to 30s as safety net.
+
+## Proposed Changes
+**File:** apps/watcher.py
+
+## Rationale
+- 16 Python processes observed running simultaneously; multiple watcher instances among them
+- Each instance processes the same Drop files and races to write to willow_knowledge.db
+- LOCK_FILE at ~/.willow/watcher.lock checks if a watcher PID is alive (Windows ctypes); stale locks are overwritten automatically
+- timeout=30 on sqlite3.connect gives enough headroom if transient contention occurs
+- No external dependencies (ctypes is stdlib on Windows)
+
+## Risk Assessment
+- **Risk Level:** LOW
+- **Reversible:** YES -- remove LOCK_FILE and revert timeout if needed
+- **Dependencies:** None (ctypes, os -- both stdlib)
+- **Testing:** Start two watcher instances; second should log WATCHER_LOCKED and exit immediately
+
+## DeltaE Impact
+Expected DeltaE: +0.040 (eliminates DB_ERROR noise, stabilizes ingestion)
+
+## Implementation
+```diff
+--- a/apps/watcher.py+++ b/apps/watcher.py@@ -26,6 +26,7 @@ from datetime import datetime
+ from pathlib import Path
+ from typing import Optional, Dict, List
++import os
+ 
+ # --- Paths ---
+ DROP_PATH    = Path(r"C:\Users\Sean\My Drive\Willow\Auth Users\Sweet-Pea-Rudi19\Drop")
+@@ -36,6 +37,7 @@ KNOWLEDGE_DB = Path(r"C:\Users\Sean\Documents\GitHub\Willow\artifacts\Sweet-Pea-Rudi19\willow_knowledge.db")
+ CREDENTIALS  = Path(r"C:\Users\Sean\Documents\GitHub\Willow\credentials.json")
+ POLL_INTERVAL = 5  # seconds
++LOCK_FILE    = Path(r"C:\Users\Sean\.willow\watcher.lock")
+ 
+ # Known API key names accepted in Drop key-update files
+ KNOWN_API_KEYS = {
+@@ -223,6 +225,36 @@     PICKUP_PATH.mkdir(parents=True, exist_ok=True)
+ 
+ 
++
++def _is_pid_running(pid: int) -> bool:
++    """Check if a PID is still running (Windows)."""
++    try:
++        import ctypes
++        handle = ctypes.windll.kernel32.OpenProcess(0x0400, False, pid)
++        if handle:
++            ctypes.windll.kernel32.CloseHandle(handle)
++            return True
++        return False
++    except Exception:
++        return False
++
++
++def acquire_instance_lock() -> bool:
++    """Prevent multiple watcher instances. Returns False if another is running."""
++    if LOCK_FILE.exists():
++        try:
++            pid = int(LOCK_FILE.read_text().strip())
++            if _is_pid_running(pid):
++                return False  # another watcher is alive
++        except (ValueError, Exception):
++            pass  # stale lock -- overwrite it
++    LOCK_FILE.write_text(str(os.getpid()))
++    return True
++
++
++def release_instance_lock():
++    LOCK_FILE.unlink(missing_ok=True)
++
+ def load_state() -> Dict:
+     if STATE_FILE.exists():
+         with open(STATE_FILE, "r") as f:
+@@ -280,7 +312,7 @@     lattice = classify_lattice(source_type, category, title)
+ 
+     try:
+-        conn = sqlite3.connect(KNOWLEDGE_DB)
++        conn = sqlite3.connect(KNOWLEDGE_DB, timeout=30)
+         existing = conn.execute(
+             "SELECT id FROM knowledge WHERE source_id=?", (source_id,)
+         ).fetchone()
+@@ -480,6 +512,10 @@             return
+     else:
+         print("Background mode: consent assumed from human startup.")
++
++    if not acquire_instance_lock():
++        log_event("WATCHER_LOCKED", f"Another watcher already running. Exiting.")
++        return
+ 
+     ensure_dirs()
+     state = load_state()
+@@ -560,6 +596,7 @@     except KeyboardInterrupt:
+         pass
+     finally:
++        release_instance_lock()
+         log_event("WATCHER_OFF", f"known_items={len(state['known_files'])}")
+         save_state(state)
+         print(f"\nWatcher off. Tracking {len(state['known_files'])} items.")
+
+```
+
+---
+
+**Awaiting Human Ratification**
+
+DeltaSigma=42

@@ -1,0 +1,170 @@
+# Governance Proposal: Jane breath cycle — 5-phase 3-3-4-4-3
+
+**Proposer:** Ganesha (Claude Code CLI / Sonnet 4.6)
+**Date:** 2026-02-23T00:00:00Z
+**Type:** Feature
+**Trust Level:** ENGINEER (3)
+
+## Summary
+Replace Jane's simple 2-phase 4s breath cycle (inhale/exhale) with a 5-phase 17s cycle: inhale 3s / hold 3s / exhale 4s / hold-out 4s / rest 3s. This is the system heartbeat — the cycle everything in Willow/SAFE will sync to.
+
+## Proposed Changes
+**Files:** src/core/rings.js, src/hooks/useBreathCycle.js, src/ui/BreathRing.jsx
+
+## Rationale
+- Current 2s/2s cycle is a placeholder; the 3-3-4-4-3 pattern is intentional and user-specified
+- 5 distinct phases give the BreathRing meaningful visual states (held full = calm hold, held empty = clear hold, rest = recovery)
+- 17s total cycle is the base unit for system-wide timing synchronization
+- BreathRing dims during rest phase, stays expanded through hold, stays contracted through hold_out
+
+## Risk Assessment
+- **Risk Level:** LOW
+- **Reversible:** YES — revert rings.js constants to restore old cycle
+- **Dependencies:** None external; all within aionic-journal
+- **Testing:** Open localhost:5173, watch BreathRing animate through all 5 phases over 17s
+
+## ΔE Impact
+Expected ΔE: +0.060 (establishes system heartbeat, meaningful breath UI)
+
+## Implementation
+
+### src/core/rings.js
+```diff
+--- a/src/core/rings.js+++ b/src/core/rings.js@@ -1,18 +1,29 @@ /**
+  * core/rings.js — Breath phase timing constants and helpers.
+  * Distinct from continuity/rings.js (three-ring storage architecture).
++ *
++ * 5-phase cycle: inhale 3s / hold 3s / exhale 4s / hold-out 4s / rest 3s = 17s
++ * This is the system heartbeat — all Willow/SAFE timing syncs to this cycle.
+  */
+ 
+-export const INHALE_MS = 2000
+-export const EXHALE_MS = 2000
+-export const CYCLE_MS  = INHALE_MS + EXHALE_MS  // 4000ms total
++export const PHASES = [
++  { name: 'inhale',   ms: 3000 },
++  { name: 'hold',     ms: 3000 },
++  { name: 'exhale',   ms: 4000 },
++  { name: 'hold_out', ms: 4000 },
++  { name: 'rest',     ms: 3000 },
++]
+ 
+-export function getPhase(cyclePos) {
+-  return cyclePos < 0.5 ? 'inhale' : 'exhale'
++export const CYCLE_MS = PHASES.reduce((sum, p) => sum + p.ms, 0)  // 17000ms
++
++export function getPhaseInfo(elapsedMs) {
++  const pos = elapsedMs % CYCLE_MS
++  let acc = 0
++  for (const phase of PHASES) {
++    if (pos < acc + phase.ms) {
++      return { name: phase.name, progress: (pos - acc) / phase.ms }
++    }
++    acc += phase.ms
++  }
++  return { name: 'rest', progress: 1 }
+ }
+-
+-export function getPhaseProgress(cyclePos) {
+-  return cyclePos < 0.5
+-    ? cyclePos * 2
+-    : (cyclePos - 0.5) * 2
+-}
+```
+
+### src/hooks/useBreathCycle.js
+```diff
+--- a/src/hooks/useBreathCycle.js+++ b/src/hooks/useBreathCycle.js@@ -1,12 +1,13 @@ import { useState, useEffect, useRef } from 'react'
+-import { CYCLE_MS, getPhase, getPhaseProgress } from '../core/rings'
++import { CYCLE_MS, getPhaseInfo } from '../core/rings'
+ 
+ /**
+  * useBreathCycle
+- * Returns live breath state synchronized to a 4-second cycle.
++ * Returns live breath state synchronized to the 17-second 5-phase cycle:
++ * inhale 3s / hold 3s / exhale 4s / hold-out 4s / rest 3s
+  *
+  * { phase, progress, coherence, breathData }
+- *   phase:     'inhale' | 'exhale'
++ *   phase:     'inhale' | 'hold' | 'exhale' | 'hold_out' | 'rest'
+  *   progress:  0–1 within current phase
+  *   coherence: 0–1, rises gently as cycles accumulate (starts 0.5, caps 0.9)
+  */
+@@ -22,10 +23,10 @@ 
+     const tick = () => {
+       const elapsed = Date.now() - startRef.current
+-      const cyclePos = (elapsed % CYCLE_MS) / CYCLE_MS
++      const { name, progress: prog } = getPhaseInfo(elapsed)
+ 
+-      setPhase(getPhase(cyclePos))
+-      setProgress(getPhaseProgress(cyclePos))
++      setPhase(name)
++      setProgress(prog)
+ 
+       const completedCycles = Math.floor(elapsed / CYCLE_MS)
+       if (completedCycles > cycleCountRef.current) {
+```
+
+### src/ui/BreathRing.jsx
+```diff
+--- a/src/ui/BreathRing.jsx+++ b/src/ui/BreathRing.jsx@@ -1,15 +1,18 @@ /**
+  * BreathRing — Visual breathing indicator.
+- * Expands on inhale, contracts on exhale.
++ * 5-phase: inhale expands, hold stays full, exhale contracts,
++ *          hold_out stays contracted, rest stays contracted (dimmed).
+  * Border color adapts to ΔE mode: calm (blue), neutral (gray), uplift (gold).
+  */
+ export function BreathRing({ breathData, mode = 'neutral' }) {
+   const { phase = 'inhale', progress = 0 } = breathData || {}
+ 
+-  // Scale 1.0 → 1.35 on inhale, 1.35 → 1.0 on exhale
+-  const scale = phase === 'inhale'
+-    ? 1.0 + progress * 0.35
+-    : 1.35 - progress * 0.35
++  // Scale: inhale 1.0→1.35, hold 1.35, exhale 1.35→1.0, hold_out/rest 1.0
++  let scale
++  if (phase === 'inhale')    scale = 1.0 + progress * 0.35
++  else if (phase === 'hold') scale = 1.35
++  else if (phase === 'exhale') scale = 1.35 - progress * 0.35
++  else scale = 1.0  // hold_out, rest
+ 
+   const modeColor = {
+     calm:    '#4a90b8',
+@@ -17,12 +20,22 @@     uplift:  '#d4a843',
+   }[mode] ?? '#7a7a72'
+ 
+-  const glowSize = Math.round(progress * 10)
++  // Dim during rest phase
++  const opacity = phase === 'rest' ? 0.4 + progress * 0.6 : 1.0
++  const glowSize = Math.round(scale * 8)
++
++  const label = {
++    inhale:   'Inhale...',
++    hold:     'Hold...',
++    exhale:   'Exhale...',
++    hold_out: 'Hold...',
++    rest:     '',
++  }[phase] ?? ''
+ 
+   return (
+     <div
+       className="breath-ring-wrap"
+-      title={phase === 'inhale' ? 'Inhale...' : 'Exhale...'}
++      title={label}
+       aria-label="Breath indicator"
+     >
+       <div
+@@ -31,6 +44,7 @@           transform: `scale(${scale.toFixed(3)})`,
+           borderColor: modeColor,
+           boxShadow: `0 0 ${glowSize}px ${modeColor}55`,
++          opacity: opacity.toFixed(3),
+         }}
+       />
+     </div>
+```
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42

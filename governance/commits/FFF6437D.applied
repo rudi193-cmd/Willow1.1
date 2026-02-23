@@ -1,0 +1,206 @@
+# Governance Proposal: Pool-based key rotation for llm_router (Gemini + extensible)
+
+**Proposer:** Ganesha (Claude Code CLI / Sonnet 4.6)
+**Date:** 2026-02-23T00:00:00Z
+**Type:** Feature / Resilience
+**Trust Level:** ENGINEER (3)
+
+## Summary
+
+The fleet currently treats each API provider as a single key. When that key hits a
+rate limit (429) or expires, the provider fails completely — even when additional
+keys for the same provider exist in credentials.json. This was observed in production:
+Gemini vision hit 429 after 2 calls, failing 5 remaining screenshot OCR tasks, despite
+two additional fresh Gemini keys sitting unused.
+
+The fix extends the existing Baseten/Novita pattern (already in the codebase) to Gemini:
+add numbered provider entries for GEMINI_API_KEY_2/3/4, update load_keys_from_json()
+to accept them, and update ask_with_vision() to rotate through all Gemini keys on failure.
+
+When a UTETY user or agent contributes a new API key via the Drop folder, it expands
+fleet capacity automatically. This proposal makes that capacity real.
+
+## Proposed Changes
+
+**File:** `core/llm_router.py`
+
+### Change 1 — `load_keys_from_json()`: add numbered Gemini keys to target_keys
+
+Add to the `target_keys` list:
+- `"GEMINI_API_KEY_2"`, `"GEMINI_API_KEY_3"`, `"GEMINI_API_KEY_4"`
+- `"GROQ_API_KEY_2"` (Groq also supports multiple keys)
+
+### Change 2 — `PROVIDERS` list: add Gemini 2/3/4 entries
+
+After the existing `Google Gemini` entry, add:
+```python
+ProviderConfig("Google Gemini 2", "GEMINI_API_KEY_2", "https://generativelanguage.googleapis.com/v1beta/models/", "gemini-2.5-flash", "free"),
+ProviderConfig("Google Gemini 3", "GEMINI_API_KEY_3", "https://generativelanguage.googleapis.com/v1beta/models/", "gemini-2.5-flash", "free"),
+ProviderConfig("Google Gemini 4", "GEMINI_API_KEY_4", "https://generativelanguage.googleapis.com/v1beta/models/", "gemini-2.5-flash", "free"),
+```
+
+Also add after the existing `Groq` entry:
+```python
+ProviderConfig("Groq2", "GROQ_API_KEY_2", "https://api.groq.com/openai/v1/chat/completions", "llama-3.1-8b-instant", "free"),
+```
+
+### Change 3 — `ask_with_vision()`: rotate through all Gemini keys
+
+Replace the single-key hardcoded vision call with a loop across all available
+Gemini providers. On 429 or failure, try the next key before returning None.
+
+## Rationale
+
+- Baseten and Novita already use this exact pattern (2 and 3 keys respectively)
+- This is a zero-risk extension of proven existing architecture
+- User contributes keys via Drop → watcher writes to credentials.json →
+  fleet picks them up automatically on next import. This closes that loop.
+- 429 = temporary quota exhaustion, not provider failure. Should rotate, not abort.
+
+## Risk Assessment
+
+- **Risk Level:** MINIMAL
+- **Reversible:** YES — removing numbered entries from PROVIDERS list restores prior behavior
+- **Dependencies:** credentials.json must contain the numbered keys for new providers to activate
+- **Testing:** Run ask_with_vision() with GEMINI_API_KEY set to expired key, GEMINI_API_KEY_2
+  set to valid key — should succeed on second attempt.
+
+## ΔE Impact
+
+Expected ΔE: +0.015 (fleet capacity ×3 for Gemini, vision OCR pipeline unblocked,
+user key contributions now have real effect)
+
+## Implementation (Python apply script — use instead of git patch)
+
+```python
+# Run this from C:\Users\Sean\Documents\GitHub\Willow after ratification:
+# python governance/apply_commits.py FFF6437D --use-script
+
+from pathlib import Path
+import re
+
+target = Path("core/llm_router.py")
+content = target.read_text(encoding='utf-8')
+
+# Change 1: add numbered keys to load_keys_from_json target_keys
+old1 = '"GEMINI_API_KEY", "GROQ_API_KEY",'
+new1 = '"GEMINI_API_KEY", "GEMINI_API_KEY_2", "GEMINI_API_KEY_3", "GEMINI_API_KEY_4", "GROQ_API_KEY", "GROQ_API_KEY_2",'
+content = content.replace(old1, new1)
+
+# Change 2: add Gemini 2/3/4 and Groq2 to PROVIDERS
+old2 = '    ProviderConfig("Google Gemini", "GEMINI_API_KEY", "https://generativelanguage.googleapis.com/v1beta/models/", "gemini-2.5-flash", "free"),\n    ProviderConfig("SambaNova",'
+new2 = ('    ProviderConfig("Google Gemini", "GEMINI_API_KEY", "https://generativelanguage.googleapis.com/v1beta/models/", "gemini-2.5-flash", "free"),\n'
+        '    ProviderConfig("Google Gemini 2", "GEMINI_API_KEY_2", "https://generativelanguage.googleapis.com/v1beta/models/", "gemini-2.5-flash", "free"),\n'
+        '    ProviderConfig("Google Gemini 3", "GEMINI_API_KEY_3", "https://generativelanguage.googleapis.com/v1beta/models/", "gemini-2.5-flash", "free"),\n'
+        '    ProviderConfig("Google Gemini 4", "GEMINI_API_KEY_4", "https://generativelanguage.googleapis.com/v1beta/models/", "gemini-2.5-flash", "free"),\n'
+        '    ProviderConfig("SambaNova",')
+content = content.replace(old2, new2)
+
+old3 = '    ProviderConfig("Groq", "GROQ_API_KEY", "https://api.groq.com/openai/v1/chat/completions", "llama-3.1-8b-instant", "free"),\n    ProviderConfig("Cerebras",'
+new3 = ('    ProviderConfig("Groq", "GROQ_API_KEY", "https://api.groq.com/openai/v1/chat/completions", "llama-3.1-8b-instant", "free"),\n'
+        '    ProviderConfig("Groq2", "GROQ_API_KEY_2", "https://api.groq.com/openai/v1/chat/completions", "llama-3.1-8b-instant", "free"),\n'
+        '    ProviderConfig("Cerebras",')
+content = content.replace(old3, new3)
+
+# Change 3: update ask_with_vision() to rotate through all Gemini providers
+old_vision = '''    # Only Gemini 2.5 Flash supports vision in the free tier
+    if not os.environ.get("GEMINI_API_KEY"):
+        logging.warning("Vision requires Gemini API key")
+        return None
+
+    # Try Gemini Vision
+    provider = None
+    for p in PROVIDERS:
+        if p.name == "Google Gemini":
+            provider = p
+            break
+
+    if not provider:
+        logging.error("Gemini provider not configured")
+        return None'''
+
+new_vision = '''    # Collect all available Gemini providers (key rotation for 429 resilience)
+    gemini_providers = [
+        p for p in PROVIDERS
+        if p.name.startswith("Google Gemini") and os.environ.get(p.env_key)
+    ]
+    if not gemini_providers:
+        logging.warning("Vision requires Gemini API key (set GEMINI_API_KEY)")
+        return None
+
+    # Try each Gemini key in order; rotate on 429 or failure
+    for provider in gemini_providers:
+        pass  # replaced below — full loop in ask_with_vision body'''
+
+# Note: Change 3 also restructures the try/except block — applied as full replacement
+# of the vision function body. See implementation notes below.
+
+target.write_text(content, encoding='utf-8')
+print("Changes 1 and 2 applied.")
+print("Change 3 (vision rotation) requires manual application — see notes below.")
+```
+
+### Change 3 detailed — full `ask_with_vision()` replacement
+
+Replace the single-provider try block with a loop:
+
+```python
+def ask_with_vision(prompt: str, image_data: str, preferred_tier: str = "free") -> Optional[str]:
+    # Collect all Gemini providers with available keys (supports key rotation)
+    gemini_providers = [
+        p for p in PROVIDERS
+        if p.name.startswith("Google Gemini") and os.environ.get(p.env_key)
+    ]
+    if not gemini_providers:
+        logging.warning("Vision requires Gemini API key (set GEMINI_API_KEY)")
+        return None
+
+    start_time = time.time()
+
+    for provider in gemini_providers:
+        try:
+            url = f"{provider.base_url}{provider.model}:generateContent?key={os.environ.get(provider.env_key)}"
+            payload = {
+                "contents": [{
+                    "parts": [
+                        {"text": prompt},
+                        {"inline_data": {"mime_type": "image/jpeg", "data": image_data}}
+                    ]
+                }]
+            }
+            resp = requests.post(url, json=payload, timeout=60)
+
+            if resp.status_code == 200:
+                response_time_ms = int((time.time() - start_time) * 1000)
+                response_text = resp.json()['candidates'][0]['content']['parts'][0]['text']
+                provider_health.record_success(provider.name, response_time_ms)
+                patterns_provider.log_provider_performance(
+                    provider=provider.name, file_type='image', category='vision_ocr',
+                    response_time_ms=response_time_ms, success=True
+                )
+                return response_text
+
+            elif resp.status_code == 429:
+                logging.warning(f"{provider.name} rate limited (429) — trying next key")
+                provider_health.record_failure(provider.name, "429", "rate_limited")
+                continue  # try next key
+
+            else:
+                provider_health.record_failure(provider.name, str(resp.status_code), resp.text[:200])
+                logging.warning(f"{provider.name} returned {resp.status_code}: {resp.text[:200]}")
+                continue
+
+        except Exception as e:
+            provider_health.record_failure(provider.name, type(e).__name__, str(e))
+            logging.error(f"{provider.name} vision failed: {e}")
+            continue
+
+    logging.error("All Gemini vision providers exhausted")
+    return None
+```
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42

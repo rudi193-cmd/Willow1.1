@@ -1,0 +1,95 @@
+# Governance Proposal: Wire health.py into SAFE /health endpoint
+
+**Proposer:** Ganesha (Claude Code CLI / Sonnet 4.6)
+**Date:** 2026-02-23T00:00:00Z
+**Type:** Feature
+**Trust Level:** ENGINEER (3)
+
+## Summary
+Extends GET /api/safe/health to include watcher liveness, OCR queue depth, and node health from health.py (ported from Willow1.1). The endpoint becomes the single place to answer "who watches the watchmen."
+
+## Proposed Changes
+**File:** api/safe_routes.py
+
+## Rationale
+- health.py is now in core/ and confirmed working (Sweet-Pea-Rudi19 shows healthy, stale nodes detected)
+- Watcher liveness check uses the new LOCK_FILE from the lock-fix commit (reads PID, checks via ctypes)
+- OCR queue depth surfaces the 191-file backlog directly in the health response
+- node_health filters out no_db entries to keep the response clean
+- check_api_health() intentionally NOT called — it makes external API calls and would slow the endpoint
+
+## Risk Assessment
+- **Risk Level:** LOW
+- **Reversible:** YES — health import is try/except, fails gracefully to empty dict
+- **Dependencies:** core/health.py (just ported), apps/watcher.py lock fix (just applied)
+- **Testing:** curl http://localhost:8420/api/safe/health — expect watcher_alive, ocr_queue_depth, nodes fields
+
+## ΔE Impact
+Expected ΔE: +0.045 (closes the watchmen gap)
+
+## Implementation
+```diff
+--- a/api/safe_routes.py+++ b/api/safe_routes.py@@ -24,6 +24,12 @@ from fastapi import APIRouter, HTTPException, Query
+ from fastapi.responses import JSONResponse
+ from pydantic import BaseModel
++
++# Health monitor (ported from Willow1.1)
++try:
++    from core.health import check_node_health
++except ImportError:
++    check_node_health = None
+ 
+ router = APIRouter(prefix="/api/safe", tags=["safe"])
+ 
+@@ -215,6 +221,36 @@         except Exception:
+             pass
+ 
++    # Watcher liveness (check PID lock file)
++    lock_file = Path(r"C:\Users\Sean\.willow\watcher.lock")
++    watcher_alive = False
++    if lock_file.exists():
++        try:
++            import ctypes
++            pid = int(lock_file.read_text().strip())
++            handle = ctypes.windll.kernel32.OpenProcess(0x0400, False, pid)
++            if handle:
++                ctypes.windll.kernel32.CloseHandle(handle)
++                watcher_alive = True
++        except Exception:
++            pass
++
++    # OCR queue depth
++    pickup_path = Path(r"C:\Users\Sean\My Drive\Willow\Auth Users\Sweet-Pea-Rudi19\Pickup")
++    ocr_queue_depth = len(list(pickup_path.glob("ocr_queue_*.json"))) if pickup_path.exists() else 0
++
++    # Node health (fresh within last hour)
++    node_health = {}
++    if check_node_health:
++        try:
++            node_health = {
++                k: {"status": v["status"], "last_update": v.get("last_update")}
++                for k, v in check_node_health(stale_threshold_hours=1).items()
++                if v["status"] != "no_db"
++            }
++        except Exception:
++            pass
++
+     return JSONResponse(
+         {
+             "status": "ok",
+@@ -222,6 +258,9 @@             "db_reachable": db_ok,
+             "knowledge_count": db_count,
+             "lattice_domains": lattice_domains,
++            "watcher_alive": watcher_alive,
++            "ocr_queue_depth": ocr_queue_depth,
++            "nodes": node_health,
+         },
+         headers=CORS_HEADERS,
+     )
+```
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42

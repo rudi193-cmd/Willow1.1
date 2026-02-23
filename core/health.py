@@ -27,7 +27,7 @@ NTFY_TOPIC = "willow-ds42"
 NTFY_URL = f"https://ntfy.sh/{NTFY_TOPIC}"
 
 # Storage
-BASE_PATH = Path(__file__).parent.parent / "artifacts" / "willow"
+BASE_PATH = Path(__file__).parent.parent / "artifacts" / "Sweet-Pea-Rudi19"
 BASE_PATH.mkdir(parents=True, exist_ok=True)
 HEALTH_DB = BASE_PATH / "health.db"
 
@@ -373,7 +373,7 @@ def check_storage_health() -> Dict:
         if not user_dir.is_dir():
             continue
 
-        kb_path = user_dir / "knowledge.db"
+        kb_path = user_dir / "willow_knowledge.db"
         if not kb_path.exists():
             continue
 

@@ -1,0 +1,80 @@
+# Governance Proposal: Fix apply_commits.py extract_diff for multi-file proposals
+
+**Proposer:** Ganesha (Claude Code CLI / Sonnet 4.6)
+**Date:** 2026-02-23T00:00:00Z
+**Type:** Bug Fix
+**Trust Level:** ENGINEER (3)
+
+## Summary
+extract_diff() has two bugs: (1) only captures the first diff block, dropping all subsequent
+file diffs in multi-file proposals; (2) agents frequently write "--- a/file+++ b/file" on a
+single line, which git apply rejects as a corrupt header. Caused three fallbacks this session.
+
+## Proposed Changes
+**File:** governance/apply_commits.py
+
+## Rationale
+- Multi-file proposals had 3 diff blocks -- only first was extracted
+- Agents concatenate diff headers onto one line causing git apply to fail
+- findall all diff blocks + re.sub to split concatenated headers
+
+## Risk Assessment
+- **Risk Level:** MINIMAL
+- **Reversible:** YES
+- **Dependencies:** None
+- **Testing:** Re-run any previously-failed .commit through apply_commits.py
+
+## Delta E Impact
+Expected DE: +0.030
+
+## Implementation
+```diff
+--- a/governance/apply_commits.py+++ b/governance/apply_commits.py@@ -20,15 +20,35 @@ REPO_ROOT = GOVERNANCE_DIR.parent
+ 
+ def extract_diff(commit_file: Path) -> str:
+-    """Extract the diff section from a commit proposal."""
++    """Extract and normalize diff content from a commit proposal.
++
++    Handles:
++    - Multiple diff blocks in one proposal (multi-file changes)
++    - Formatting corruption where --- and +++ land on the same line
++    """
+     content = commit_file.read_text(encoding="utf-8")
+ 
+-    # Look for diff block between ```diff and ```
+-    diff_match = re.search(r'```diff\n(.*?)\n```', content, re.DOTALL)
+-    if diff_match:
+-        return diff_match.group(1)
+-
+-    return None
++    # Collect ALL diff blocks (multi-file proposals have one per file)
++    diffs = re.findall(r'```diff
++(.*?)
++```', content, re.DOTALL)
++    if not diffs:
++        return None
++
++    combined = '
++'.join(diffs)
++
++    # Fix common agent formatting corruption:
++    # "--- a/foo.py+++ b/foo.py" on one line -> split to two lines
++    combined = re.sub(r'(--- a/\S+)\s*(\+\+\+ b/)', r'
++', combined)
++
++    if not combined.endswith('
++'):
++        combined += '
++'
++
++    return combined
+ 
+ def extract_metadata(commit_file: Path) -> dict:
+     """Extract metadata from commit proposal."""
+```
+
+---
+
+**Awaiting Human Ratification**
+
+DS=42

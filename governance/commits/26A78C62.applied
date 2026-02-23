@@ -1,0 +1,67 @@
+# Governance Proposal: Fix llm_router.load_keys_from_json() absolute path
+
+**Proposer:** Ganesha (Claude Code CLI / Sonnet 4.6)
+**Date:** 2026-02-22T22:45:00Z
+**Type:** Bug Fix
+**Trust Level:** ENGINEER (3)
+
+## Summary
+
+`load_keys_from_json()` currently resolves `credentials.json` as a relative path
+from whatever directory the calling process was started in. When called from
+`C:\Users\Sean\.local\bin` (Claude Code's working directory) or any directory
+other than the Willow repo root, it silently finds no file and loads zero keys.
+This causes all fleet providers (Gemini, Groq, Cerebras, etc.) to fail with
+"API key not set" errors, breaking vision OCR, summarization, and all delegated
+code generation tasks.
+
+Fix: resolve against `__file__` (the router module itself) so the path is always
+correct regardless of working directory.
+
+## Proposed Changes
+
+**File:** `core/llm_router.py`
+**Location:** Inside `load_keys_from_json()`, line 94
+
+## Rationale
+
+- The bug was confirmed during a debugging session: `GEMINI_API_KEY: NOT SET`
+  despite the key existing in `credentials.json` at the repo root
+- The fix is a one-liner fallback that preserves backward compatibility
+- Risk of regression is minimal — the canonical path is tried first; if it
+  doesn't exist (e.g. running from a clone without credentials), falls back
+  to the original cwd behavior
+
+## Risk Assessment
+
+- **Risk Level:** MINIMAL
+- **Reversible:** YES — single line change, trivially reverted
+- **Dependencies:** None
+- **Testing:** Run `python core/llm_router.py` from any directory and verify
+  Gemini key loads. Then run vision OCR on a screenshot.
+
+## ΔE Impact
+
+Expected ΔE: +0.003 (removes silent failure, restores fleet availability)
+
+## Implementation
+
+```diff
+--- a/core/llm_router.py
++++ b/core/llm_router.py
+@@ -94,7 +94,9 @@ def load_keys_from_json():
+-    key_path = Path("credentials.json")
+-    if not key_path.exists():
+-        return
++    # Try absolute canonical path first, fall back to cwd for portability
++    _canonical = Path(__file__).parent.parent / "credentials.json"
++    key_path = _canonical if _canonical.exists() else Path("credentials.json")
++    if not key_path.exists():
++        return
+```
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42
