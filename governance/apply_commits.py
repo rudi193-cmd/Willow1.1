@@ -20,15 +20,35 @@ COMMITS_DIR = GOVERNANCE_DIR / "commits"
 REPO_ROOT = GOVERNANCE_DIR.parent
 
 def extract_diff(commit_file: Path) -> str:
-    """Extract the diff section from a commit proposal."""
+    """Extract and normalize diff content from a commit proposal.
+
+    Handles:
+    - Multiple diff blocks in one proposal (multi-file changes)
+    - Formatting corruption where --- and +++ land on the same line
+    """
     content = commit_file.read_text(encoding="utf-8")
 
-    # Look for diff block between ```diff and ```
-    diff_match = re.search(r'```diff\n(.*?)\n```', content, re.DOTALL)
-    if diff_match:
-        return diff_match.group(1)
+    # Collect ALL diff blocks (multi-file proposals have one per file)
+    diffs = re.findall(r'```diff
+(.*?)
+```', content, re.DOTALL)
+    if not diffs:
+        return None
 
-    return None
+    combined = '
+'.join(diffs)
+
+    # Fix common agent formatting corruption:
+    # "--- a/foo.py+++ b/foo.py" on one line -> split to two lines
+    combined = re.sub(r'(--- a/\S+)\s*(\+\+\+ b/)', r'
+', combined)
+
+    if not combined.endswith('
+'):
+        combined += '
+'
+
+    return combined
 
 def extract_metadata(commit_file: Path) -> dict:
     """Extract metadata from commit proposal."""
@@ -84,7 +104,7 @@ def apply_commit(commit_file: Path, dry_run: bool = False) -> bool:
     try:
         # Write diff to temp file
         patch_file = GOVERNANCE_DIR / f".temp_{commit_id}.patch"
-        patch_file.write_text(diff)
+        patch_file.write_text(diff + '\n', newline='\n')
 
         # Apply patch
         result = subprocess.run(
