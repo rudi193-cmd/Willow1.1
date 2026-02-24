@@ -1,0 +1,124 @@
+# Governance Proposal: Onboarding Router + Roots API Registration
+
+**Proposer:** Ganesha (Claude Code CLI / Sonnet 4.6)
+**Date:** 2026-02-23T00:00:00Z
+**Type:** Feature
+**Trust Level:** ENGINEER (3)
+
+## Summary
+
+Two additions to existing T1 files:
+
+1. **`core/agent_registry.py`** — add `willow_state` table + three onboarding functions:
+   `assign_onboarding_agent()`, `get_onboarding_agent()`, `mark_onboarding_complete()`
+
+2. **`server.py`** — register the new `roots_routes` router (already written at `api/roots_routes.py`)
+
+## Rationale
+
+- Onboarding routing: when a new Willow is created, a random OPERATOR+ agent is assigned
+  front desk duty for that user's first session. Stored in `willow_state` table.
+- Roots API: `core/roots_config.py` and `api/roots_routes.py` are already written.
+  They just need registering in server.py to be reachable.
+
+## Risk Assessment
+
+- **Risk Level:** LOW
+- **Reversible:** YES
+- **Dependencies:** `api/roots_routes.py`, `core/roots_config.py` (both already written)
+- **Testing:** POST /api/roots with a path, GET /api/roots — confirm entry appears
+
+## ΔE Impact
+
+Expected ΔE: +0.150
+
+## Implementation
+
+### Change 1: core/agent_registry.py
+
+Add after `init_agent_tables()`:
+
+```python
+def init_state_table(username):
+    """Add willow_state key-value table to agent DB."""
+    conn = _conn(username)
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS willow_state (
+            key   TEXT PRIMARY KEY,
+            value TEXT,
+            set_at TEXT
+        );
+    """)
+    conn.commit()
+    conn.close()
+
+
+def _set_state(username, key, value):
+    conn = _conn(username)
+    conn.execute(
+        "INSERT OR REPLACE INTO willow_state (key, value, set_at) VALUES (?,?,?)",
+        (key, value, datetime.now().isoformat())
+    )
+    conn.commit()
+    conn.close()
+
+
+def _get_state(username, key, default=None):
+    conn = _conn(username)
+    row = conn.execute("SELECT value FROM willow_state WHERE key=?", (key,)).fetchone()
+    conn.close()
+    return row["value"] if row else default
+
+
+def assign_onboarding_agent(username):
+    """
+    Randomly assign a front-desk agent for this user's first session.
+    Picks from OPERATOR or ENGINEER trust level agents.
+    Stores in willow_state. Returns agent name.
+    """
+    import random
+    agents = list_agents(username)
+    eligible = [a for a in agents if a["trust_level"] in ("OPERATOR", "ENGINEER")
+                and a["name"] not in ("ganesha",)]  # ganesha is CLI-only
+    if not eligible:
+        eligible = agents  # fallback: any agent
+    chosen = random.choice(eligible)["name"]
+    _set_state(username, "onboarding_agent", chosen)
+    _set_state(username, "onboarding_complete", "false")
+    return chosen
+
+
+def get_onboarding_agent(username):
+    """Get assigned onboarding agent. Assigns one if not yet set."""
+    agent = _get_state(username, "onboarding_agent")
+    if not agent:
+        agent = assign_onboarding_agent(username)
+    return agent
+
+
+def mark_onboarding_complete(username):
+    """Mark onboarding as complete for this user."""
+    _set_state(username, "onboarding_complete", "true")
+
+
+def is_onboarding_complete(username):
+    """Check if onboarding is complete."""
+    return _get_state(username, "onboarding_complete", "false") == "true"
+```
+
+Also: call `init_state_table(username)` inside `register_default_agents()`.
+
+### Change 2: server.py
+
+Add after the existing router includes:
+
+```python
+from api.roots_routes import router as roots_router
+app.include_router(roots_router)
+```
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42

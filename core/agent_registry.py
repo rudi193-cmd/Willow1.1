@@ -182,9 +182,78 @@ def mark_read(username, message_id):
     return True
 
 
+
+def init_state_table(username):
+    """Add willow_state key-value table to agent DB."""
+    conn = _conn(username)
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS willow_state (
+            key   TEXT PRIMARY KEY,
+            value TEXT,
+            set_at TEXT
+        );
+    """)
+    conn.commit()
+    conn.close()
+
+
+def _set_state(username, key, value):
+    conn = _conn(username)
+    conn.execute(
+        "INSERT OR REPLACE INTO willow_state (key, value, set_at) VALUES (?,?,?)",
+        (key, value, datetime.now().isoformat())
+    )
+    conn.commit()
+    conn.close()
+
+
+def _get_state(username, key, default=None):
+    conn = _conn(username)
+    row = conn.execute("SELECT value FROM willow_state WHERE key=?", (key,)).fetchone()
+    conn.close()
+    return row["value"] if row else default
+
+
+def assign_onboarding_agent(username):
+    """
+    Randomly assign a front-desk agent for this user's first session.
+    Picks from OPERATOR or ENGINEER agents (excludes ganesha — CLI only).
+    Stores in willow_state. Returns agent name.
+    """
+    import random
+    agents = list_agents(username)
+    eligible = [a for a in agents if a["trust_level"] in ("OPERATOR", "ENGINEER")
+                and a["name"] not in ("ganesha",)]
+    if not eligible:
+        eligible = agents
+    chosen = random.choice(eligible)["name"]
+    _set_state(username, "onboarding_agent", chosen)
+    _set_state(username, "onboarding_complete", "false")
+    return chosen
+
+
+def get_onboarding_agent(username):
+    """Get assigned onboarding agent. Assigns one if not yet set."""
+    agent = _get_state(username, "onboarding_agent")
+    if not agent:
+        agent = assign_onboarding_agent(username)
+    return agent
+
+
+def mark_onboarding_complete(username):
+    """Mark onboarding as complete for this user."""
+    _set_state(username, "onboarding_complete", "true")
+
+
+def is_onboarding_complete(username):
+    """Check if onboarding is complete."""
+    return _get_state(username, "onboarding_complete", "false") == "true"
+
+
 def register_default_agents(username):
     """Register all built-in personas as agents."""
     init_agent_tables(username)
+    init_state_table(username)
     results = []
     for name, display, trust, atype, purpose in DEFAULT_AGENTS:
         is_new = register_agent(username, name, display, trust, atype, purpose)

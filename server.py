@@ -34,7 +34,7 @@ from core import agent_registry
 from core import tool_engine, kart_orchestrator, kart_tasks
 from core.awareness import on_scan_complete, on_organize_complete, on_coherence_update, on_topology_update, say as willow_say
 from apps.pa import drive_scan, drive_organize
-from api import kart_routes, agent_routes, safe_routes
+from api import kart_routes, agent_routes, safe_routes, social_routes, social_workflow_routes, nasa_routes, roots_routes
 
 app = FastAPI(title="Willow", docs_url=None, redoc_url=None)
 
@@ -55,6 +55,10 @@ USERNAME = local_api.DEFAULT_USER
 app.include_router(kart_routes.router)  # Task orchestration
 app.include_router(agent_routes.router)  # Conversational agents
 app.include_router(safe_routes.router)   # SAFE OS — consent + knowledge query
+app.include_router(social_routes.router)          # Social media queue + series + metrics
+app.include_router(social_workflow_routes.router)  # Workflow: next → draft → publish
+app.include_router(nasa_routes.router)             # NASA archive — scoped to nasa-archive/data/ only
+app.include_router(roots_routes.router)            # Filesystem roots — configure + scan local dirs
 # Governance endpoints already defined in server.py (lines 1023-1155)
 
 
@@ -2212,6 +2216,18 @@ def serve_pocket():
     if not POCKET_HTML.exists():
         return {"error": "neocities/index.html not found"}
     return FileResponse(POCKET_HTML, media_type="text/html")
+
+
+# --- The Binder ---
+
+BINDER_HTML = Path(__file__).parent / "binder.html"
+
+@app.get("/binder")
+def serve_binder():
+    """Serve The Binder — UTETY Local Stacks knowledge browser."""
+    if not BINDER_HTML.exists():
+        return {"error": "binder.html not found"}
+    return FileResponse(BINDER_HTML, media_type="text/html; charset=utf-8")
 
 
 # --- Governance Dashboard ---
