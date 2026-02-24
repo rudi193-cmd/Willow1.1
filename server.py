@@ -34,7 +34,7 @@ from core import agent_registry
 from core import tool_engine, kart_orchestrator, kart_tasks
 from core.awareness import on_scan_complete, on_organize_complete, on_coherence_update, on_topology_update, say as willow_say
 from apps.pa import drive_scan, drive_organize
-from api import kart_routes, agent_routes, safe_routes, social_routes, social_workflow_routes, nasa_routes, roots_routes
+from api import kart_routes, agent_routes, safe_routes, social_routes, social_workflow_routes, nasa_routes, roots_routes, utety_routes, vision_routes, dating_routes, die_namic_routes
 
 app = FastAPI(title="Willow", docs_url=None, redoc_url=None)
 
@@ -59,6 +59,10 @@ app.include_router(social_routes.router)          # Social media queue + series 
 app.include_router(social_workflow_routes.router)  # Workflow: next → draft → publish
 app.include_router(nasa_routes.router)             # NASA archive — scoped to nasa-archive/data/ only
 app.include_router(roots_routes.router)            # Filesystem roots — configure + scan local dirs
+app.include_router(utety_routes.router)    # UTETY chat + professors + sessions
+app.include_router(vision_routes.router)   # Vision board image classification
+app.include_router(dating_routes.router)   # Dating wellbeing red flag analysis
+app.include_router(die_namic_routes.router) # Die-namic system state (read-only)
 # Governance endpoints already defined in server.py (lines 1023-1155)
 
 
@@ -256,36 +260,6 @@ async def chat(request: Request):
 
     return StreamingResponse(generate(), media_type="text/event-stream")
 
-
-@app.post("/api/utety/chat")
-async def utety_chat(request: Request):
-    """
-    UTETY chat proxy — same contract as the Cloudflare Worker.
-    Body: {message, persona, history: [{role, content}]}
-    Returns: {response} or {error}
-    Routes through the free fleet via llm_router.
-    """
-    body = await request.json()
-    message = body.get("message", "").strip()
-    persona = body.get("persona", "")
-    history = body.get("history", [])
-
-    if not message or not persona:
-        return {"error": "missing fields"}
-
-    history_text = ""
-    for turn in history[-10:]:
-        role = "User" if turn.get("role") == "user" else "Assistant"
-        history_text += f"{role}: {turn.get('content', '')}\n"
-
-    full_prompt = f"{persona}\n\n{history_text}User: {message}" if history_text else f"{persona}\n\nUser: {message}"
-
-    from core import llm_router
-    llm_router.load_keys_from_json()
-    result = llm_router.ask(full_prompt, preferred_tier="free")
-    if result:
-        return {"response": result.content}
-    return {"error": "fleet_unavailable"}
 
 
 @app.post("/api/chat/multi")

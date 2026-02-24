@@ -1,0 +1,48 @@
+# Governance Proposal: Wire All Repos into Willow
+
+**Proposer:** Ganesha (Claude Code CLI / Sonnet 4.6)
+**Date:** 2026-02-23T00:00:00Z
+**Type:** Feature
+**Trust Level:** ENGINEER (3)
+
+## Summary
+
+Register 4 new route files in server.py — covering every active repo:
+- `api/utety_routes.py` — full UTETY session/professor/chat (replaces the stub)
+- `api/vision_routes.py` — vision-board image classification (kills :8420 port conflict)
+- `api/dating_routes.py` — dating wellbeing red flag analysis
+- `api/die_namic_routes.py` — die-namic-system DB read-only window
+
+Also: remove the old inline `/api/utety/chat` stub from server.py (replaced by utety_routes).
+
+## Risk Assessment
+
+- **Risk Level:** LOW
+- **Reversible:** YES — comment out include_router lines
+- **Dependencies:** All 4 route files already written and syntax-checked
+- **Testing:** GET /api/utety/health, /api/vision/health, /api/dating/health, /api/die-namic/health
+
+## Implementation
+
+### server.py import line change:
+```diff
+-from api import kart_routes, agent_routes, safe_routes, social_routes, social_workflow_routes, nasa_routes, roots_routes
++from api import kart_routes, agent_routes, safe_routes, social_routes, social_workflow_routes, nasa_routes, roots_routes, utety_routes, vision_routes, dating_routes, die_namic_routes
+```
+
+### Add after roots_router line:
+```python
+app.include_router(utety_routes.router)    # UTETY chat + professors + sessions
+app.include_router(vision_routes.router)   # Vision board image classification
+app.include_router(dating_routes.router)   # Dating wellbeing red flag analysis
+app.include_router(die_namic_routes.router) # Die-namic system state (read-only)
+```
+
+### Remove inline stub (already replaced by utety_routes):
+Remove the `@app.post("/api/utety/chat")` function and its body from server.py.
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42
