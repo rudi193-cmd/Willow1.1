@@ -214,22 +214,15 @@ class AgentEngine:
                         "tier": "free"
                     }
             
-            # Route to Free Fleet for conversation
-            tool_names = [t.get("name") for t in self.tools] if self.agent_name == "kart" else None
-            result = handle_conversational(user_message, self.context, tools_list=tool_names)
+            # Route through full tool-aware LLM path (all agents)
+            if stream:
+                return self._chat_streaming()
+            result = self._chat_blocking()
             if self.agent_name in ("jane", "kart", "sean"):
                 context_injector.extract_and_store(
                     self.username, user_message, result.get("response", "")
                 )
             return result
-
-
-
-        # Get response from LLM with tool awareness
-        if stream:
-            return self._chat_streaming()
-        else:
-            return self._chat_blocking()
 
     def _chat_blocking(self) -> Dict[str, Any]:
         """Non-streaming chat response."""

@@ -1,0 +1,78 @@
+# Governance Proposal: Wire Tool Access for All Agents
+
+**Proposer:** Ganesha (Claude Code CLI / Sonnet 4.6)
+**Date:** 2026-02-23T00:00:00Z
+**Type:** Bug Fix / Feature Enablement
+**Trust Level:** ENGINEER (3)
+
+## Summary
+
+All Willow agents (Willow, Kart, Jane, Riggs, Ada, Gerald, Steve) have 13 tools registered
+in `tool_engine` and a full tool-calling loop in `_chat_blocking()`, but the `chat()` method
+always returns early via `handle_conversational()` — making the tool-calling path dead code.
+This proposal removes the dead bypass and routes all conversational queries through the
+tool-aware `_chat_blocking()` path.
+
+## Proposed Changes
+
+**File:** `core/agent_engine.py`
+**Location:** End of `chat()` method (lines 217–232)
+
+## Rationale
+
+- `_chat_blocking()` (lines 234–334) has full tool detection + execution loop
+- `handle_conversational()` has zero tool execution capability
+- The `chat()` method always reaches `handle_conversational()` and returns — lines 227–231
+  are unreachable dead code
+- Result: Jane can't `read_file`, Kart can't `bash_exec`, Willow can't `search_knowledge`
+- Fix: route the fallthrough case to `_chat_blocking()` / `_chat_streaming()`
+
+## Risk Assessment
+
+- **Risk Level:** LOW
+- **Reversible:** YES — revert by restoring `handle_conversational()` call
+- **Dependencies:** `_chat_blocking()` already exists and is tested logic
+- **Testing:** Start server, chat with any agent, ask it to read a file — confirm tool executes
+
+## ΔE Impact
+
+Expected ΔE: +0.180 (enables the core capability the agent system was designed for)
+
+## Implementation
+
+```diff
+--- a/core/agent_engine.py
++++ b/core/agent_engine.py
+@@ -217,14 +217,10 @@ class AgentEngine:
+-            # Route to Free Fleet for conversation
+-            tool_names = [t.get("name") for t in self.tools] if self.agent_name == "kart" else None
+-            result = handle_conversational(user_message, self.context, tools_list=tool_names)
+-            if self.agent_name in ("jane", "kart", "sean"):
+-                context_injector.extract_and_store(
+-                    self.username, user_message, result.get("response", "")
+-                )
+-            return result
+-
+-
+-
+-        # Get response from LLM with tool awareness
+-        if stream:
+-            return self._chat_streaming()
+-        else:
+-            return self._chat_blocking()
++            # Route through full tool-aware LLM path (all agents)
++            if stream:
++                return self._chat_streaming()
++            result = self._chat_blocking()
++            if self.agent_name in ("jane", "kart", "sean"):
++                context_injector.extract_and_store(
++                    self.username, user_message, result.get("response", "")
++                )
++            return result
+```
+
+---
+
+**Awaiting Human Ratification**
+
+ΔΣ=42
